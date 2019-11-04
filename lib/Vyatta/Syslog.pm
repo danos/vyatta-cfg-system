@@ -531,34 +531,35 @@ sub get_override_target_template {
 #
 sub get_action {
     my ( $host, $config, $vrf ) = @_;
-    my $TARGET  = $host;
-    my $ADDRESS = get_active_ip( $config, get_src_intf($config), $TARGET );
-    if ( defined get_src_intf($config) ) {
-        return unless defined $ADDRESS;
-    }
+    my ( $TARGET, $PORT );
     my @fwd_actions;
 
-    my $port;
-
-   # Use SYSTEMD_UNIT with SYSLOG_INDENTIFIER so that full unit name is printed,
-   # eg: sshd@blue.service
+    # Use SYSTEMD_UNIT with SYSLOG_INDENTIFIER so that full unit name is printed,
+    # eg: sshd@blue.service
     my $template_str = ' Template="SystemdUnitTemplate"';
 
-    if ( $TARGET =~ /^:/ ) {
+    # Extract TARGET & PORT from host string
+    if ( $host =~ /^:/ ) {
         # Target is a user terminal of the form :omusrmsg:<user>
+	$TARGET = $host;
         return "\t$TARGET\n";
-    } elsif ( $TARGET =~ m/^@/ ) {
-        my ( $ohost, $template ) = get_override_target_template($TARGET);
+    } elsif ( $host =~ m/^@/ ) {
+        my ( $ohost, $template ) = get_override_target_template($host);
         if ( defined($ohost) ) {
-            ( $TARGET, $port ) = get_target_port($ohost);
+            ( $TARGET, $PORT ) = get_target_port($ohost);
             $template_str = " Template=\"$template\""
               if ( defined($template) );
         } else {
             $TARGET = $host;
-            $port   = $SYSLOG_PORT;
+            $PORT   = $SYSLOG_PORT;
         }
     } else {
-        ( $TARGET, $port ) = get_target_port($TARGET);
+        ( $TARGET, $PORT ) = get_target_port($host);
+    }
+
+    my $ADDRESS = get_active_ip( $config, get_src_intf($config), $TARGET );
+    if ( defined get_src_intf($config) ) {
+        return unless defined $ADDRESS;
     }
 
     # MAP functions follow
@@ -608,7 +609,7 @@ sub get_action {
         $c->{protocol}  = 'udp' unless defined $c->{protocol};
         $c->{protocol}  = 'udp' if ( $TARGET =~ /console/ );
         $c->{'ip-port'} = '514';
-        $c->{'ip-port'} = $port if defined $port;
+        $c->{'ip-port'} = $PORT if defined $PORT;
         if ( $c->{protocol} eq 'tcp' ) {
             $act_config = {
                 "type"     => 'omfwd',

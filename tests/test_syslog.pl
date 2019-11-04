@@ -14,6 +14,10 @@ use Test::TempDir::Tiny;
 use Test::MockModule;
 use Test::MockObject;
 
+use lib 'lib';
+our $fake_system = sub { return 0; };
+use Test::Mock::Cmd 'system' => sub { $fake_system->(@_) };
+
 use File::Slurp;
 use JSON::XS qw(decode_json encode_json);
 
@@ -94,12 +98,27 @@ foreach my $test (keys %input) {
 	#
 	mock_Configd_tree_get_hash($input{$test});
 
+	# Save STDERR
 	#
-	# Run vyatta_update_syslog.pl (Replace with do vyatta_update_syslog.pl ?)
+	open(STDERR, '>' ,"/tmp/stderr.log");
+
+	# RUN PROGRAM
+	#
 	update_rsyslog_config();
 	#
-	#
+	# END
 
+	# Check if stderr is empty as well
+	#
+	my $filter = `cat "fixture/syslog/good-rsyslog.d/${test}.stderrfilter" 2>/dev/null`;
+	my $in = `cat /tmp/stderr.log`;
+	if ($in ne $filter) {
+		is ($in, '', "$test");
+	}
+	unlink '/tmp/stderr.log';
+
+	#
+	#
 	unmock_Configd_tree_get_hash();
 
 	my @generated_config = split /^/m, read_test_results();
