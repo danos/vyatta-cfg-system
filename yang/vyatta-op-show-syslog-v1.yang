@@ -51,7 +51,7 @@ module vyatta-op-show-syslog-v1 {
 
 		Defines the top 'syslog' level under 'show' for  operational CLI";
 
-	revision 2019-06-06 {
+	revision 2019-11-15 {
 		description "Initial version";
 	}
 
@@ -62,6 +62,7 @@ module vyatta-op-show-syslog-v1 {
             opd:command global {
                 opd:help "Show syslog global messages (var/log/messages)";
                 opd:on-enter 'vyatta-show-log-file messages /var/log';
+                status obsolete;
             }
 
             opd:option file {

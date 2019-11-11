@@ -60,6 +60,9 @@ module vyatta-system-syslog-v1 {
 
 		 Syslog configuration";
 
+	revision 2019-11-15 {
+		description "Obsolete syslog global target.";
+	}
 	revision 2019-10-17 {
 		description "Limits TLS peers to one due to rsyslog omfwd module only supporting one peer.";
 	}
@@ -417,6 +420,7 @@ module vyatta-system-syslog-v1 {
 
 	grouping syslog-global {
 		container global {
+			status obsolete;
 			presence "Enable global";
 			configd:help "Logging to system standard location";
 			uses facility-archive;
