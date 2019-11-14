@@ -1,0 +1,6 @@
+[Unit]
+Description=Pre-boot configuration processing done.
+Before=sysinit.target
+
+[Install]
+RequiredBy=sysinit.target

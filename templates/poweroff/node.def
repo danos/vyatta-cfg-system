@@ -1,0 +1,2 @@
+help: Poweroff the system
+run: ${vyatta_bindir}/vyatta-shutdown.pl --action poweroff

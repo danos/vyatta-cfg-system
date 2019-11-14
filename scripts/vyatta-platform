@@ -1,0 +1,40 @@
+#! /usr/bin/perl
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Script to manage platform configuration parameters
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5";
+use Getopt::Long;
+use Vyatta::PlatformConfig qw(set_cfg get_cfg del_cfg);
+
+sub usage {
+	print "Usage: $0 --action=<set|get|delete> --attr=<attr-name> ",
+	      "[--value=<value>] [--default]\n";
+	exit 1;
+}
+
+my ($action, $attr, $value, $default);
+
+GetOptions (
+	"action=s"  => \$action,
+    "attr=s"    => \$attr,
+	"value=s"   => \$value,
+	"default"   => \$default,
+) or usage();
+
+usage() unless (defined($action) && defined($attr));
+
+if ($action eq "set") {
+	usage() unless defined($value);
+	set_cfg($attr, $value, $default);
+} elsif ($action eq "get") {
+	get_cfg($attr);
+} elsif ($action eq "delete") {
+	del_cfg($attr);
+}

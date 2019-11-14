@@ -1,0 +1,17 @@
+[Unit]
+Description=Clear VCI component configuration on install / rollback
+Before=shutdown.target sysinit.target vyatta-pre-boot.target
+After=system-preconfigure.service
+Wants=system-preconfigure.service
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/clear-system-config
+StandardOutput=syslog
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=sysinit.target vyatta-pre-boot.target
+WantedBy=vyatta-pre-boot.target

@@ -1,0 +1,3 @@
+help: Reset terminal
+local: true
+run: \reset

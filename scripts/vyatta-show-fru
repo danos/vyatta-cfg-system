@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to output field-replaceable unit (FRU) related show commands
+
+import sys
+import os
+
+from vyatta import configd
+
+frus_map = [
+    ('fru-name','FRU Device'),
+    ('id','ID'),
+    ('board-manufacture-date','Board Manufacture Date'),
+    ('board-manufacturer','Board Manufacturer'),
+    ('board-product-name','Board Product Name'),
+    ('board-serial-number','Board Serial Number'),
+    ('board-part-number','Board Part Number'),
+    ('product-manufacturer','Product Manufacturer'),
+    ('product-name','Product Name'),
+    ('product-part-number','Product Part Number'),
+    ('product-version','Product Version'),
+    ('product-serial-number','Product Serial Number'),
+    ('product-asset-tag','Product Asset Tag'),
+    ('product-extra','Product Extra')
+]
+
+DEVPATHS = [ '/dev/ipmi0', '/dev/ipmi/0', '/dev/ipmidev/0' ]
+def check_ipmi_support():
+    for d in DEVPATHS:
+        if os.path.exists(d):
+            return True
+    return None
+
+def show_hardware_fru(frus):
+    if check_ipmi_support():
+        for fru in frus['fru']:
+            for key, value in frus_map:
+                if fru[key] != "unavailable":
+                    print("{:<22} {:<1} {:<22}".format(value, ':', fru[key]))
+            print("\n")
+    else:
+        print("\nNo FRU information found!")
+
+
+if __name__ == "__main__":
+    c = configd.Client()
+
+    try:
+        frus = c.tree_get_full_dict("system hardware frus fru",
+                                   configd.Client.RUNNING, "json")
+    except:
+        print(msg="can't retrieve FRU information\n", file=sys.stderr)
+        sys.exit(1)
+
+    show_hardware_fru(frus)

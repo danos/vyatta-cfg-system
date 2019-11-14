@@ -1,0 +1,6 @@
+help: Set system date and time
+allowed: echo -n '<MMDDhhmm>' '<MMDDhhmmYY>' '<MMDDhhmmCCYY>' '<MMDDhhmmCCYY.ss>'
+run: date "$3"
+     if [ -w /dev/ipmi0 ]; then
+         ipmitool sel time set "`date +%m/%d/%Y\ %H:%M:%S`" > /dev/null
+     fi

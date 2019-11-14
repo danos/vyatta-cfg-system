@@ -1,0 +1,23 @@
+[Unit]
+Description=Modem Getty on %I
+BindsTo=dev-%i.device
+After=dev-%i.device systemd-user-sessions.service
+After=rc-local.service
+Before=getty.target
+IgnoreOnIsolate=yes
+
+[Service]
+EnvironmentFile=/etc/modem-getty/%i/modem-getty.env
+ExecStart=-/sbin/agetty -mt60 $BAUD_RATE_LIST %I
+Type=idle
+Restart=always
+UtmpIdentifier=%I
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+KillMode=process
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+
+[Install]
+WantedBy=getty.target

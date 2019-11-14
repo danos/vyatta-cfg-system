@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+#Imported libraries
+import dbus
+import json
+import sys
+
+#DBUS constant definitions
+DBUS_INTERFACE = 'net.vyatta.eng.cpu.history'
+DBUS_OBJECT    = '/net/vyatta/eng/cpu/history'
+DATA_INTERFACE = 'net.vyatta.eng.cpu.history.Data'
+
+class Client():
+  #Initializes the dbus for communication
+   def __init__(self):
+      system_bus = dbus.SystemBus()
+      service = system_bus.get_object(DBUS_INTERFACE, DBUS_OBJECT)
+      self._data = service.get_dbus_method('get_data', DATA_INTERFACE)
+
+   def run(self):
+      print #Newline for formatting
+      jout = {} #Dictionary that later gets turned into a json object
+      elements = []
+      for interval in self._data():
+        curInterval = {}
+        for key in interval:
+          if(key == 'interval'):
+            curInterval[key] = int(interval[key])
+          else:
+            curInterval[key] = '%.2f'%(interval[key])
+        elements.append(curInterval)
+      jout['cpu-data'] = elements
+      #If "show" is passed then the data will be displayed in table format
+      if(len(sys.argv) == 2 and sys.argv[1] == "show"):
+        print("Interval    %user    %nice    %system",
+        	"    %iowait    %steal    %idle")
+        print("-------------------------------------",
+        	"------------------------------")
+        for duration in elements:
+          if(int(duration['interval']) % 60 == 0):
+            duration['interval'] = (str(int(duration['interval'] / 60)) 
+            	+ " hr(s)")
+          else:
+            duration['interval'] = str(int(duration['interval'])) + " min(s)"
+          for key in duration.keys():
+            if(key != 'interval'):
+              duration[key] = duration[key]
+              if(len(duration[key]) < 5):
+                #Append a 0 to the beginning for formatting purposes
+                duration[key] = "0" + duration[key]
+          print("%-12s%-9s%-9s%-11s%-11s%-10s%s"%(duration['interval'], 
+          	duration['user'],duration['nice'],duration['system'],
+            	duration['iowait'],duration['steal'],duration['idle']))
+      #If "show" is not passed as an argument then the client outputs the JSON
+      else:
+        print(json.dumps(jout))
+        print
+
+if __name__ == "__main__":
+   Client().run()

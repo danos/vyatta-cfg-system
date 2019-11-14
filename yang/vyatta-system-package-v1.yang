@@ -1,0 +1,152 @@
+module vyatta-system-package-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-package:1";
+	prefix vyatta-system-package-v1;
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+		         Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2019, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Package management configuration";
+
+	revision 2016-08-03 {
+		description "Change archive source creation";
+	}
+	revision 2016-03-15 {
+		description "Add sources repository (via deb-src) too";
+	}
+	revision 2015-08-14 {
+		description "Initial revision of version 1.";
+	}
+
+	augment /system:system {
+		container package {
+			presence "true";
+			configd:priority "400";
+			configd:help "Package update repository parameters";
+			leaf auto-sync {
+				type uint32 {
+					range 0..31 {
+						error-message "auto-sync must be between 0 and 32 days";
+					}
+				}
+				default "1";
+				configd:help "Update the the repository cache every n days (0 disables auto-update)";
+				configd:update "/opt/vyatta/share/tmplscripts/system/package/auto-sync/configd_update1.cli";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/package/auto-sync/configd_delete1.cli";
+			}
+			list repository {
+				configd:help "Debian archive name";
+				configd:end "setup-package-repo --archive=$VAR(@)";
+				configd:validate "/opt/vyatta/share/tmplscripts/system/package/repository/configd_validate1.cli";
+				configd:validate "/opt/vyatta/share/tmplscripts/system/package/repository/configd_validate2.cli";
+				key "archive";
+				leaf archive {		
+					type types:alpha-numeric {
+						configd:help "Debian archive name";
+					}
+				}
+				leaf description {
+					type string;
+					configd:help "Repository description";
+				}
+				leaf password {
+					type string {
+						pattern "[^!]*" {
+							error-message "Do not use '!' in url";
+						}
+					}
+					configd:secret "true";
+					configd:help "Repository password";
+					default "";
+				}
+				leaf username {
+					type string {
+						pattern "[^!]*" {
+							error-message "Do not use '!' in url";
+						}
+					}
+					configd:help "Repository username";
+					default "";
+				}
+				leaf url {
+					type string {
+						pattern "[^!]+" {
+							error-message "URL must not be null and must not contain '!'";
+						}
+					}
+					configd:help "Repository URL";
+				}
+				leaf components {
+					type string {
+						pattern "[^!]+" {
+							error-message "Do not use '!' in component name";
+						}
+					}
+					configd:help "Repository component names";
+				}
+				leaf distribution {
+					type string {
+						pattern "[^!]+" {
+							error-message "Do not use '!' in distribution name";
+						}
+					}
+					configd:help "Distribution name";
+				}
+				leaf sources {
+					type empty;
+					configd:help "Add sources repository (via deb-src) too";
+					description "Add sources repository (via deb-src) too";
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+delete:expression: exec "sh -c \"touch /etc/apt/apt.conf &&     sed -i '/APT::Periodic::Update-Package-Lists*/d' /etc/apt/apt.conf\" "

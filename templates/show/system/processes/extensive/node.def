@@ -1,0 +1,2 @@
+help: Show extensive process info
+run: top -b -n2 -d0.1 | awk "/^top/{i++}i==2"

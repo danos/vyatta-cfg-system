@@ -1,0 +1,222 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to configure sensor related parameters
+
+import os
+import sys
+import subprocess
+
+from vyatta import configd
+
+IPMI_GET_SENSOR_SDR_DATA = '/usr/bin/ipmitool raw 0xa 0x23 0x00 0x00'
+IPMI_GET_SENSOR_SDR_DATA_OFFSET = '0x00 0xff'
+IPMI_GET_SENSOR_SDR_RES_ID = '/usr/bin/ipmitool raw 0xa 0x22'
+IPMI_DEL_SENSOR_SDR_RECORD = '/usr/bin/ipmitool raw 0xa 0x26'
+IPMI_ADD_SENSOR_SDR_RECORD = '/usr/bin/ipmitool raw 0xa 0x24'
+
+thresholds = {
+    "upper-non-recoverable" : "unr",
+    "upper-critical" : "ucr",
+    "upper-non-critical" : "unc",
+    "lower-non-recoverable" : "lnr",
+    "lower-critical" : "lcr",
+    "lower-non-critical" : "lnc"
+}
+
+#Reference to threshold byte location for IPMI spec 2.0
+thresholds_sdr_record_idx = {
+    "upper-non-recoverable" : 37,
+    "upper-critical" : 38,
+    "upper-non-critical" : 39,
+    "lower-non-recoverable" : 40,
+    "lower-critical" : 41,
+    "lower-non-critical" : 42
+}
+
+def err(msg):
+    print(msg, file=sys.stderr)
+
+def show_sensor_names():
+    sensors = [] 
+    cmd = ['ipmitool', 'sensor']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to load ipmitool sensor command: {}".format(e))
+        return {}
+
+    while(p.poll() is None):
+        line = p.stdout.readline().decode()
+        line = line.strip()
+        if len(line) > 0:
+            name = line.split('|')[0].strip() 
+            sensors.append(name.replace(' ', '\ '))
+
+    print("\n".join(sensors))
+
+def run_ipmi_sdr_commands(cmd):
+    try:
+        out = subprocess.check_output(cmd.split())
+    except subprocess.CalledProcessError as exc:
+        if exc.output:
+            print(exc.output.strip())
+        else:
+            print(str(exc).strip())
+        return None
+
+    return (out)
+
+def flush_sdr_cache():
+    cmd = ['ipmi-sensors', '-f']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to flush ipmi sdr cache: {}".format(e))
+
+def populate_sensor_data_record():
+    sdr = {}
+    flush_sdr_cache()
+    cmd = ['ipmi-sensors', '-vv']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to load ipmi-sensors command: {}".format(e))
+        return {}
+
+    r = {}
+    while True:
+        line = p.stdout.readline().decode()
+        if len(line) == 0 and p.poll() is not None:
+            break
+        line = line.strip()
+        if len(line) > 0:
+            try:
+                k,v = line.split(': ')
+                r[k] = v
+            except:
+                pass
+        else:
+            if len(r) > 0:
+                try:
+                    sdr[r['ID String']] = r
+                except:
+                    pass
+            r = {}
+
+    return(sdr)
+
+def configure_sensor_threshold(name, threshold, value):
+    if(os.path.exists("/dev/ipmi0")):
+        cmd = ['ipmitool', 'sensor', 'thresh', name, thresholds[threshold], value]
+
+        try:
+            out = subprocess.check_output(cmd)
+        except subprocess.CalledProcessError as exc:
+            if exc.output:
+                print("\nWARNING: Invalid Threshold values will be ignored!")
+                print(exc.output.strip())
+            else:
+                print(str(exc).strip())
+    else:
+        print("No ipmi devices found on the system to set sensor parameters")
+
+def get_raw_value(value, M, M_exp, B, B_exp):
+    return((value - B*(10**B_exp))/(M*(10**M_exp)))
+
+def configure_sensor_sdr_table(sensor_name, sdr):
+    name = sensor_name['name']
+    if name is None:
+        return
+
+    record_id = int(sdr[sensor_name['name']]['Record ID'])
+    if record_id is None:
+        return
+    record_id = record_id.to_bytes(2, sys.byteorder)
+
+    cmd = IPMI_GET_SENSOR_SDR_DATA + ' ' + hex(record_id[0]) + ' ' \
+          + hex(record_id[1]) + ' ' + IPMI_GET_SENSOR_SDR_DATA_OFFSET
+
+    data = run_ipmi_sdr_commands(cmd)
+    if data is not None:
+        data = ((data.decode("ascii")).replace('\n', '')).split()
+
+    M = int(sdr[name]['M'])
+    M_exp = int(sdr[name]['R Exponent'])
+    B = int(sdr[name]['B'])
+    B_exp = int(sdr[name]['B Exponent'])
+    min_reading = float(sdr[name]['Sensor Min. Reading'].split()[0])
+    max_reading = float(sdr[name]['Sensor Max. Reading'].split()[0])
+
+    for threshold_type in sensor_name['threshold']:
+        value = float(sensor_name['threshold'][threshold_type])
+
+        if value < min_reading or value > max_reading:
+            print('\nWARNING: ' + name + ' ' + threshold_type +
+                  ' threshold value out of range ' + str(min_reading) +
+                  ' to ' + str(max_reading))
+            return None
+
+        raw_value = get_raw_value(value, M, M_exp, B, B_exp)
+        if raw_value is None:
+            return
+        data[thresholds_sdr_record_idx[threshold_type]+1] = str(hex(int(raw_value)).split('x')[-1])
+
+
+    cmd = IPMI_GET_SENSOR_SDR_RES_ID
+    res_id = run_ipmi_sdr_commands(cmd)
+    if res_id is not None:
+        res_id = ((res_id.decode("ascii")).replace('\n', '')).split()
+
+    cmd = IPMI_DEL_SENSOR_SDR_RECORD
+    for p in res_id:
+        cmd = cmd + ' 0x' + p
+    cmd = cmd + ' ' + hex(record_id[0]) + ' ' + hex(record_id[1])
+    old_rec_id = run_ipmi_sdr_commands(cmd)
+
+    cmd = IPMI_ADD_SENSOR_SDR_RECORD
+    for p in data[2:]:
+        cmd = cmd + ' 0x' + p
+    new_rec_id = run_ipmi_sdr_commands(cmd)
+
+    for threshold_type in sensor_name['threshold']:
+        configure_sensor_threshold(sensor_name['name'],
+                                   threshold_type,
+                                   sensor_name['threshold'][threshold_type])
+
+def sensors_main():
+    '''
+    Get the sensor info from configured tree and configure sensor threshold.
+    '''
+    try:
+        SENSOR_CONFIG_STRING = 'system sensors sensor'
+        client = configd.Client()
+        # return when sensor threshold is deleted successfully.
+        if not client.node_exists(client.CANDIDATE, SENSOR_CONFIG_STRING):
+            return
+        cfg = client.tree_get_dict(SENSOR_CONFIG_STRING)
+    except Exception as e:
+        print("Failed to get tree on '{}': '{}'".format(SENSOR_CONFIG_STRING, e), file=sys.stderr)
+        sys.exit(1)
+
+    sdr = populate_sensor_data_record()
+    if sdr is None:
+        print("\nNo Sensor Data Records found on the device")
+        return
+
+    for sensor_name in cfg['sensor']:
+        configure_sensor_sdr_table(sensor_name, sdr)
+
+if __name__ == "__main__":
+    if (sys.argv[1] == "threshold"):
+        sensors_main()
+    if (sys.argv[1] == "show-sensor-names"):
+        show_sensor_names()
+    exit(0)
+

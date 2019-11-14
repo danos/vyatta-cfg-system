@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016, Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+fix_slash_config_permissions ()
+{
+    chgrp -R vyattacfg /config
+    find /config -type d -print0 | xargs -0 --no-run-if-empty chmod 2770
+    find /config -type f -print0 | xargs -0 --no-run-if-empty chmod 660
+
+    chmod 600 /config/archive/* &> /dev/null
+    chmod 640 /config/archive/commits &> /dev/null
+    chmod 600 /config/config.boot* &> /dev/null
+    chmod 770 /config/scripts/* &> /dev/null
+}
+
+fix_root_permissions ()
+{
+    chmod g-w,o-w /
+}
+
+fix_slash_config_permissions
+fix_root_permissions
+
+# Local Variables:
+# mode: shell-script
+# sh-indentation: 4
+# End:

@@ -1,0 +1,22 @@
+#!/bin/bash
+# **** License ****
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Copyright (C) 2007-2010 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Description:	Vyatta Package Repository Pre-configuration.
+#		This script removes all repository source
+#               entries prior to processing the package
+#               repository configuration. 
+#
+# **** End License ****
+
+>/etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/*.list

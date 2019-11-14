@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016, Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+: "${vyatta_env:=/etc/default/vyatta}"
+
+if [ -r "$vyatta_env" ]; then
+    source "$vyatta_env"
+fi
+
+declare -r SYSPRECONFIG="${vyatta_prefix}/preconfig.d"
+
+if [ -x "$SYSPRECONFIG" ]; then
+    run-parts --verbose "$SYSPRECONFIG"
+fi
+
+echo "=== system-preconfigure ==="

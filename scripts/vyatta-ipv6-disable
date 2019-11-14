@@ -1,0 +1,114 @@
+#!/bin/bash
+# Copyright (c) 2019 AT&T Intellectual Property
+# All rights reserved.
+# Copyright (c) 2015-2016, 2019 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+progname=${0##*/}
+action=$1
+[ "$action" != create ]
+value=$? # 1 if action is to create config to disable IPv6
+intf=$2
+
+param=disable_ipv6
+ipv6_conf=/proc/sys/net/ipv6/conf
+ipv6_run=/var/run/vyatta
+procfile=$ipv6_conf/$intf/$param
+runfile=$ipv6_run/ipv6_disable.$intf
+
+modify_global ()
+{
+    echo $value > $ipv6_conf/all/$param
+    echo $value > $ipv6_conf/default/$param
+}
+
+modify_startup ()
+{
+    FILE=/etc/sysctl.d/30-vyatta-router.conf
+    sed -i -e "/^net.ipv6.conf.*.disable_ipv6=/s/$((1-value))/$value/g" $FILE
+}
+
+create_global ()
+{
+    modify_global
+    modify_startup
+}
+
+delete_global ()
+{
+    # Enable IPv6 by default and for interfaces that are not disabled,
+    # then restore IPv6 addresses and also modify the kernel parameter
+    # file read at startup, as this was changed for the create action.
+    cd $ipv6_conf
+    echo 0 > default/$param
+    enable_all=1
+    for i in * ; do
+        if [ "$i" == "default" ] || [ "$i" == "all" ] || [ ! -d "$i" ]
+        then
+            continue
+        fi
+        if [ -e $ipv6_run/ipv6_disable."$i" ]; then
+            enable_all=0
+        else
+            echo 0 > $i/$param
+        fi
+    done
+    if [ "$enable_all" == "1" ]; then
+        echo 0 > all/$param
+    fi
+    restore-ipv6-address.pl --force-restore
+    modify_startup
+}
+
+create_intf () {
+    if [ -e "$procfile" ]; then
+        echo $value > "$procfile"
+    else
+        echo "IPv6 will be disabled when $intf comes up"
+    fi
+    touch "$runfile"
+}
+
+delete_intf () {
+    if [ -e "$procfile" ]; then
+        # Only re-enable IPv6 per interface if not globally disabled
+        global=$(cat $ipv6_conf/default/$param)
+        if [ "$global" == "0" ]; then
+            if [ -e /sys/class/net/"$intf"/brport ]; then
+                echo "$intf not re-enabled as it is in L2 mode"
+                return
+            else
+                echo $value > "$procfile"
+                restore-ipv6-address.pl --force-restore "$intf"
+            fi
+        else
+            echo "$intf not re-enabled as IPv6 is globally disabled"
+        fi
+    else
+        echo "IPv6 will be re-enabled when $intf comes up"
+    fi
+    rm -f "$runfile"
+}
+
+case "$action" in
+    create)
+        if [ -n "$intf" ]; then
+            create_intf
+        else
+            create_global
+        fi
+        ;;
+    delete)
+        if [ -n "$intf" ]; then
+            delete_intf
+        else
+            delete_global
+        fi
+        ;;
+    *)
+        echo "Usage: $progname {create|delete} [<ifname>]"
+        exit 1
+        ;;
+esac

@@ -1,0 +1,6 @@
+[Unit]
+Description=Boot configuration loaded
+Before=systemd-user-sessions.service nss-user-lookup.target
+
+[Install]
+WantedBy=multi-user.target

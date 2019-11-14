@@ -1,0 +1,6 @@
+help: Show most recent kernel boot messages
+run:  if [ -d /run/systemd/system ]; then
+          journalctl -k -b -o short-monotonic --no-tail | sed -e "s/ vyatta kernel://g" | sed -e "/Logs begin at/d" 
+      else
+          cat /var/log/dmesg
+      fi

@@ -1,0 +1,131 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to output sensor related show commands
+
+import sys
+import os
+
+from vyatta import configd
+
+DEVPATHS = [ '/dev/ipmi0', '/dev/ipmi/0', '/dev/ipmidev/0' ]
+
+def check_ipmi_support():
+    for d in DEVPATHS:
+        if os.path.exists(d):
+            return True
+    return None
+
+def show_hardware_sensor(sensors):
+    if check_ipmi_support():
+        print("{:<24} {:<20} {:<20}".format('Name (ID)','Reading','Threshold Status'))
+        print("{:<24} {:<20} {:<20}".format('---------','-------','----------------'))
+        i = 0
+        while i < (len(sensors['sensor'])):
+            name_id = sensors['sensor'][i]['name'] + ' (' + str(sensors['sensor'][i]['id']) + ')'
+            reading = (sensors['sensor'][i]['value'])/(10**sensors['sensor'][i]['value-precision'])
+            reading = str(reading) + ' ' + sensors['sensor'][i]['units-display']
+
+            oper_status = sensors['sensor'][i]['oper-status']
+            if oper_status == 'notapplicable':
+                oper_status = 'n/a'
+            print ("{:<24} {:<20} {:<20}".
+                   format(name_id, reading, oper_status))
+            i+=1
+    else:
+        os.system("sensors")
+
+def show_hardware_sensor_threshold(sensors):
+    if check_ipmi_support():
+        fmt = "{:<24} {:<14} {:<14} {:<14} {:<14} {:<14} {:<14}"
+        print(fmt.
+              format('Name (ID)','Upper non-','Upper',
+                     'Upper non-','Lower non-',
+                     'Lower', 'Lower non-'))
+        print(fmt.
+              format(' ','recoverable','critical',
+                     'critical','recoverable',
+                     'critical', 'critical'))
+
+        print(fmt.
+              format('---------','-----------','--------',
+                     '---------','-----------',
+                     '--------','----------'))
+        i = 0
+        while i < (len(sensors['sensor'])):
+            name_id = sensors['sensor'][i]['name'] + ' (' + str(sensors['sensor'][i]['id']) + ')'
+            print (fmt.
+                   format(name_id,
+                          sensors['sensor'][i]['upper-non-recoverable'],
+                          sensors['sensor'][i]['upper-critical'],
+                          sensors['sensor'][i]['upper-non-critical'],
+                          sensors['sensor'][i]['lower-non-recoverable'],
+                          sensors['sensor'][i]['lower-critical'],
+                          sensors['sensor'][i]['lower-non-critical']))
+            i+=1
+    else:
+        print("\nNo sensors found!")
+
+def show_hardware_sensor_sel():
+    c = configd.Client()
+
+    try:
+        sels = c.call_rpc_dict("vyatta-system-sensor-v1", "system-event-logs", "{}")
+
+    except:
+        print(msg="can't retrieve sensor sel information\n", file=sys.stderr)
+        sys.exit(1)
+
+
+    if check_ipmi_support():
+        fmt = "{:<24} {:<24} {:<16} {:<16} {:<32} {:<24}"
+        print(fmt.
+              format('Timestamp','Name (ID)','Trigger',
+                     'Trigger','Description','Event'))
+        print(fmt.
+              format(' ', ' ','Reading',
+                     'Threshold',' ','Details'))
+
+        print(fmt.
+              format('---------','---------','-------',
+                     '---------','-----------','--------'))
+        i = 0
+
+        if sels:
+            while i < (len(sels['sel'])):
+                name_id = sels['sel'][i]['name'] + ' (' + str(sels['sel'][i]['id']) + ')'
+                print (fmt.
+                   format(sels['sel'][i]['timestamp'], name_id,
+                          sels['sel'][i]['trigger-reading'],
+                          sels['sel'][i]['trigger-threshold'],
+                          sels['sel'][i]['description'],
+                          sels['sel'][i]['event']))
+                i+=1
+    else:
+        print("\nNo sensors found!")
+
+
+def show_hardware_sensor_cmds():
+    c = configd.Client()
+
+    try:
+        sensors = c.tree_get_full_dict("system hardware sensor",
+                                   configd.Client.RUNNING, "json")
+    except:
+        print(msg="can't retrieve sensor information\n", file=sys.stderr)
+        sys.exit(1)
+
+    if (sys.argv[1] == "sensor"):
+        show_hardware_sensor(sensors)
+    if (sys.argv[1] == "threshold"):
+        show_hardware_sensor_threshold(sensors)
+    if (sys.argv[1] == "sel"):
+        show_hardware_sensor_sel()
+
+
+if __name__ == "__main__":
+    show_hardware_sensor_cmds()
+

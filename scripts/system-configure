@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2007-2016, Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+: "${vyatta_env:=/etc/default/vyatta}"
+source "$vyatta_env"
+source "${vyatta_sbindir}/vyatta-pxe-boot"
+
+declare -x BOOTFILE="$vyatta_sysconfdir/config/config.boot"
+
+# load the initial config
+load_bootfile ()
+{
+      if [ -f /etc/default/vyatta-load-boot ]; then
+        # build-specific environment for boot-time config loading
+        source /etc/default/vyatta-load-boot
+      fi
+      /opt/vyatta/sbin/lu -user configd sg vyattacfg -c "$vyatta_sbindir/vyatta-boot-config-loader $BOOTFILE"
+}
+
+load_bootfile
+chmod 600 /config/config.boot* &> /dev/null

@@ -1,0 +1,382 @@
+#!/usr/bin/perl -w
+#
+# Module: show_version
+#
+# **** License ****
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014, 2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2007-2013 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Author: Rick Balocca
+# Date: 2007
+# Description:
+#
+# **** End License ****
+#
+use strict;
+use warnings;
+
+use File::Slurp qw(read_file);
+use POSIX qw(uname);
+
+#
+# Global hash of debians in the base install and now.
+#
+my $rHoH_base_debs;
+my $rHoH_now_debs;
+
+my $base        = '/opt/vyatta/etc';
+my $versionfile = "$base/version";
+my $buildfile   = "$base/build.txt";
+my $debsfile    = "$base/deb-versions.txt";
+my $dmidecode   = "/usr/sbin/dmidecode";
+
+sub echo_file {
+    my ($file) = @_;
+
+    my @lines = ();
+    if ( !( -e $file ) ) {
+        return @lines;
+    }
+
+    open( my $FH, '<', $file ) or die "Unable to open [$file]\n";
+    @lines = <$FH>;
+    close($FH);
+    return @lines;
+}
+
+sub echo_version_file {
+    my @lines = ();
+    if ( !( -e $versionfile ) ) {
+        return @lines;
+    }
+
+    open( my $FH, '<', $versionfile ) or die "Unable to open [$versionfile]\n";
+    my $buildType = get_build_type();
+    while (my $row = <$FH>) {
+        if (index($row, "Version") != -1) { 
+            $row =~ s/\s+$//;
+            $row = $row.$buildType."\n"; 
+            push (@lines, $row);
+        } else {
+            push (@lines, $row);
+        }
+    }
+    close($FH);
+    return @lines;
+}
+
+# With entitlement feature, 3 types of images are being built
+# This function returns the type of build based on the type of
+# entitlement package installed
+sub get_build_type {
+    my @dpkg_query = qx(dpkg-query -l 'vyatta-ent1-runtime*' 2>/dev/null | grep -E '^ii');
+    my @packages = map { my @d = split(/\s/, $_, 5) ; $d[2] } @dpkg_query;
+    my $build_type = "";
+
+    if (grep { /-hard$/ } @packages) {
+        $build_type = "B";
+    } elsif (@packages) {
+        $build_type = "A";
+    }
+
+    return $build_type;
+}
+
+# Determine image type based on architecture reported by uname
+sub get_image_type {
+    my ($sysname, $nodename, $rel, $ver, $machine) = POSIX::uname ();
+    my $version;
+
+    if ( !defined($machine) ) {
+        warn "Can not run uname: $!\n";
+        $version = "Unknown";
+        return $version;
+    }
+
+    if ( $machine =~ /^(i)?[3|4|5|6]86$/ ) {
+        $version = "Intel 32bit";
+    }
+    elsif ( $machine eq "amd64" or $machine eq "x86_64" ) {
+        $version = "Intel 64bit";
+    }
+    else {
+        $version = $machine;
+    }
+
+    return $version;
+}
+
+#
+# convert the "dpkg -l" output have same format as deb-versions.txt
+#
+sub get_pkg_version {
+    my @lines = @_;
+
+    my @new_lines = ();
+    foreach my $line (@lines) {
+        if ( $line =~ /^[D\|\+]/ ) {
+            next;    # skip header
+        }
+        my ( $status, $pkg, $version ) = split( /[ \t\n]+/, $line, 4 );
+        if ( $status =~ /^i/ ) {
+            if ( $pkg =~ /:/ ) {
+                my ( $pkgname, $arch ) = split( /:/, $pkg, 2 );
+                push( @new_lines, "$pkgname $version" );
+            }
+            else {
+                push( @new_lines, "$pkg $version" );
+            }
+        }
+    }
+    return @new_lines;
+}
+
+sub parse_key_values {
+    my @lines = @_;
+
+    chomp(@lines);
+    return map { ## no critic
+        # eat quotes around strings
+        s/"(.*)"/$1/;
+        split /=/, $_, 2;
+    } @lines;
+}
+
+sub match_project_id_version {
+    my ( $project_id, $version ) = @_;
+
+    return unless $version;
+
+    return grep { /${version}$/ } join('', split(/:/, $project_id));
+}
+
+sub print_os_release {
+    my (%rel_data) = @_;
+
+    $rel_data{BUILD_ID} ||= 'UNKNOWN';
+    $rel_data{NAME} ||= 'UNKNOWN';
+    $rel_data{VYATTA_PROJECT_ID} ||= 'UNKNOWN';
+
+    my $version = $rel_data{BUILD_ID};
+    $version = $rel_data{VERSION_ID} if $rel_data{VERSION_ID};
+    print "Version:      $version\n";
+
+    my $desc = $rel_data{NAME};
+    $desc = $rel_data{PRETTY_NAME} if $rel_data{PRETTY_NAME};
+    $desc .= " $rel_data{VERSION}" if $rel_data{VERSION};
+    $desc .= " $rel_data{VARIANT}" if $rel_data{VARIANT};
+    $desc .= " ($rel_data{VYATTA_PROJECT_ID})"
+        unless match_project_id_version($rel_data{VYATTA_PROJECT_ID},
+                                        $rel_data{VERSION_ID});
+    print "Description:  $desc\n"
+}
+
+sub read_pkg_file {
+    my @pkgs_list = @_;
+
+    my %HoH = ();
+    my ( $name, $version );
+    foreach my $line (@pkgs_list) {
+        ( $name, $version ) = split( /[ \t\n]+/, $line, 3 );
+        $HoH{$name}{'version'} = $version;
+    }
+    return \%HoH;
+}
+
+sub show_added {
+    for my $name ( sort keys %$rHoH_now_debs ) {
+        if ( !$rHoH_base_debs->{$name} ) {
+            printf( "Aii %-25s %-25s\n",
+                $name, $rHoH_now_debs->{$name}->{'version'} );
+        }
+    }
+}
+
+sub show_deleted {
+    for my $name ( sort keys %$rHoH_base_debs ) {
+        if ( !$rHoH_now_debs->{$name} ) {
+            printf( "X   %-25s %-25s\n",
+                $name, $rHoH_base_debs->{$name}->{'version'} );
+        }
+    }
+}
+
+sub show_upgraded_downgraded {
+    my ($up_down) = @_;
+
+    my ( $symbol, $op, $ver_base, $ver_now, $cmd );
+    if ( $up_down eq "upgraded" ) {
+        $symbol = "U";
+        $op     = "lt";
+    }
+    else {
+        $symbol = "D";
+        $op     = "gt";
+    }
+    for my $name ( sort keys %$rHoH_base_debs ) {
+        if ( $rHoH_now_debs->{$name} ) {
+            $ver_base = $rHoH_base_debs->{$name}{'version'};
+            $ver_now  = $rHoH_now_debs->{$name}{'version'};
+            if ( $ver_base ne $ver_now ) {
+                $cmd = "dpkg --compare-versions \"$ver_base\" $op \"$ver_now\"";
+                if ( !system($cmd) ) {
+                    printf( "%sii %-25s %-20s (baseline: %s)\n",
+                        $symbol, $name, $ver_now, $ver_base );
+                }
+            }
+        }
+    }
+}
+
+sub show_upgraded {
+    show_upgraded_downgraded("upgraded");
+}
+
+sub show_downgraded {
+    show_upgraded_downgraded("downgraded");
+}
+
+sub show_all {
+    show_added();
+    show_deleted();
+    show_upgraded();
+    show_downgraded();
+}
+
+my %options = (
+    "added"      => \&show_added,
+    "deleted",   => \&show_deleted,
+    "upgraded"   => \&show_upgraded,
+    "downgraded" => \&show_downgraded,
+    "all"        => \&show_all,
+);
+
+# This is a "modulino" (http://www.drdobbs.com/scripts-as-modules/184416165)
+exit __PACKAGE__->main()
+    unless caller();
+
+sub main {
+    my %rel_data = parse_key_values(read_file('/etc/os-release',
+                                              err_mode => 'quiet'));
+    if (%rel_data && $rel_data{ID} eq 'vyatta') {
+        print_os_release( %rel_data );
+    } else {
+        # fall-back to old-style version printing
+        print( &echo_version_file() );
+    }
+
+    my $ent = get_build_type();
+    if ($ent) {
+        if ($ent eq "A") {
+            $ent = "Licensed";
+        } elsif ($ent eq "B") {
+            $ent = "Standard";
+        }
+
+        print "License:      $ent\n";
+    }
+
+    print( &echo_file($buildfile) );
+
+    my $type = get_image_type();
+    if ($type) {
+        print "System type:  $type\n";
+    }
+
+    my $booted =
+        `egrep -e '^(unionfs|overlayfs|aufs|overlay) .*/filesystem\.squashfs' /proc/mounts`;
+    if ( defined($booted) && $booted ne "" ) {
+        $booted = "livecd";
+    }
+    else {
+        my $image_boot =
+            `egrep -e '^(unionfs|overlayfs|overlay) / (unionfs|overlayfs|overlay).*\.squashfs' /proc/mounts`;
+        if ( $image_boot ne "" ) {
+            $booted = "image";
+        }
+        else {
+            $booted = "disk";
+        }
+    }
+    print "Boot via:     $booted\n";
+
+    my $hypervisor;
+    my $sys_manu = `$dmidecode -s system-manufacturer`;
+    chomp $sys_manu;
+    if ( $sys_manu =~ /Xen/ ) {
+        $hypervisor = $sys_manu;
+    } else {
+        open my $cpu, '-|', 'lscpu'
+            or die "can't run lscpu";
+
+        while (<$cpu>) {
+            if (/^Hypervisor.*:\s+(.*)$/) {
+                $hypervisor = $1;
+            }
+        }
+        close $cpu;
+    }
+
+    if ( defined $hypervisor ) {
+        printf "Hypervisor:   $hypervisor\n";
+    }
+
+    my $plat_model = `$dmidecode -s system-product-name`;
+    chomp $plat_model;
+
+    my $plat_sn;
+    if ( $plat_model eq 'S9500-30XS' ) {
+        $plat_sn = `$dmidecode -s chassis-serial-number`;
+    }
+    else {
+        $plat_sn = `$dmidecode -s system-serial-number`;
+    }
+    chomp $plat_sn;
+
+    my $plat_uuid = `$dmidecode -s system-uuid`;
+    chomp $plat_uuid;
+
+    if ( defined $plat_model && $plat_model ne "" && $plat_model ne " " ) {
+        print "HW model:     $plat_model\n";
+    }
+
+    if ( defined $plat_sn && $plat_sn ne "" && $plat_sn ne " " ) {
+        print "HW S/N:       $plat_sn\n";
+    }
+
+    if ( defined $plat_uuid && $plat_uuid ne "" && $plat_uuid ne " " ) {
+        print "HW UUID:      $plat_uuid\n";
+    }
+
+    my $uptime = `uptime`;
+    if ( defined $uptime && $uptime ne "" ) {
+        print "Uptime:      $uptime";
+    }
+
+    if ( !( -e $debsfile ) ) {
+        exit 0;
+    }
+
+    $rHoH_base_debs = read_pkg_file( &echo_file($debsfile) );
+    $rHoH_now_debs  = read_pkg_file( get_pkg_version(`dpkg -l 2> /dev/null`) );
+
+    if ( $#ARGV == 0 ) {
+        if ( $options{ $ARGV[0] } ) {
+            $options{ $ARGV[0] }->();
+        } else {
+            print "Usage: showversion [added|deleted|upgraded|downgraded|all]\n";
+            exit 1;
+        }
+    }
+
+    exit 0;
+}

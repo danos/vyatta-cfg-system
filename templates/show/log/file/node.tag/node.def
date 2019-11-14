@@ -1,0 +1,6 @@
+help: Show contents of specified user-defined log file
+allowed: local -a array ;
+         shopt -s nullglob ;
+         array=( /var/log/user/* ) ;
+         [ ${#array[@]} -gt 0 ] && echo  -n ${array[@]##*/}
+run: vyatta-show-log-file $4 /var/log/user

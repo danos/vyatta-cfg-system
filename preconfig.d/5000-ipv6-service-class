@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Set service class of RFC4861 ICMPv6 packets to network control as per RFC4594
+
+ip6tables -t mangle -A POSTROUTING -p ipv6-icmp --icmpv6-type \
+neighbour-solicitation -j DSCP --set-dscp-class CS6
+
+ip6tables -t mangle -A POSTROUTING -p ipv6-icmp --icmpv6-type \
+neighbour-advertisement -j DSCP --set-dscp-class CS6
+
+ip6tables -t mangle -A POSTROUTING -p ipv6-icmp --icmpv6-type \
+router-solicitation -j DSCP --set-dscp-class CS6
+
+ip6tables -t mangle -A POSTROUTING -p ipv6-icmp --icmpv6-type \
+router-advertisement -j DSCP --set-dscp-class CS6

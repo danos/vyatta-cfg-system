@@ -1,0 +1,295 @@
+module vyatta-system-network-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-network:1";
+	prefix vyatta-system-network-v1;
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+		         Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2017-2019 AT&T Intellectual Property
+		 All rights reserved.
+
+		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Global network parameter configuration";
+
+	revision 2018-12-18 {
+		description "Remove DNS forwarding hook.
+			     Remove variable expansions from error messages.";
+	}
+
+	revision 2018-07-02 {
+		description "Add ICMP/ND redirect disable/enable capability";
+	}
+
+	revision 2018-06-15 {
+		description "Support for gratuitous ARP processing";
+	}
+	revision 2018-04-30 {
+		description "Add static-host-mapping script";
+	}
+
+	revision 2017-09-07 {
+		description "Deprecate the arp command";
+	}
+
+	revision 2016-05-31 {
+		description "Split grouping for system network.";
+	}
+
+	revision 2016-04-18 {
+		description "Add grouping for system network.";
+	}
+
+	revision 2015-08-14 {
+		description "Initial revision of version 1.";
+	}
+
+	grouping system-network-domain {
+		leaf domain-name {
+			type types:domain-name;
+			configd:priority "400";
+			configd:help "System domain name";
+			configd:update "/opt/vyatta/share/tmplscripts/system/domain-name/configd_update.sh";
+			configd:delete "/opt/vyatta/share/tmplscripts/system/domain-name/configd_delete.sh";
+		}
+		container domain-search {
+			presence "true";
+			configd:priority "400";
+			configd:help "Domain Name Server (DNS) domain completion order";
+			leaf-list domain {
+				type string {
+					pattern '[-a-zA-Z0-9\.]+';
+				}
+				ordered-by "user";
+				configd:help "DNS domain completion order";
+				configd:create "/opt/vyatta/share/tmplscripts/system/domain-search/domain/configd_create1.cli";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/domain-search/domain/configd_delete1.cli";
+			}
+		}
+	}
+
+	typedef garp-packet-action {
+		type enumeration {
+			enum "drop" {
+				configd:help "Drop specified packets";
+				description "Drop specified packets";
+			}
+			enum "update" {
+				configd:help "Accept GARP packets for known L3 addresses";
+				description "Accept GARP packets for known L3 addresses. Update mac address binding only for
+                                             ARP entries that already exist. No new ARP entries are created";
+			}
+		}
+	}
+
+	grouping garp-config {
+		container gratuitous-arp {
+			description "Gratuitous ARP processing control";
+			configd:help "Gratuitous ARP processing control";
+			leaf request {
+				description "Action to take on GARP Request packets";
+				configd:help "Action to take on GARP Request packets";
+				type garp-packet-action;
+			}
+			leaf reply {
+				description "Action to take on GARP Reply packets";
+				configd:help "Action to take on GARP Reply packets";
+				type garp-packet-action;
+			}
+		}
+	}
+
+	grouping system-network-hostname-ipinfo {
+		leaf host-name {
+			type string {
+				pattern '[0-9A-Za-z][-\.0-9A-Za-z]*[0-9A-Za-z]';
+				length "2..63";
+			}
+			configd:priority "100";
+			configd:help "System host name (default: vyatta)";
+			default "vyatta";
+			configd:update "/opt/vyatta/share/tmplscripts/system/host-name/configd_update.sh";
+			configd:delete "/opt/vyatta/share/tmplscripts/system/host-name/configd_delete.sh";
+		}
+		container ip {
+			presence "true";
+			configd:priority "400";
+			configd:help "IPv4 settings";
+			leaf arp {
+				status deprecated;
+				type empty;
+				configd:help "Parameters for ARP cache";
+			}
+			leaf disable-forwarding {
+				type empty;
+				configd:help "Disable IPv4 forwarding";
+				configd:create "/opt/vyatta/share/tmplscripts/system/ip/disable-forwarding/configd_create.sh";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/ip/disable-forwarding/configd_delete.sh";
+			}
+			uses garp-config {
+				refine gratuitous-arp {
+					configd:help "Global processing behaviour for gratuitous ARPs";
+					description "Global processing behaviour for gratuitous ARPs";
+				}
+				refine gratuitous-arp/request {
+					configd:update "/opt/vyatta/sbin/vyatta-interfaces.pl --action ${COMMIT_ACTION} --garp $VAR(.),$VAR(@)";
+					configd:delete "/opt/vyatta/sbin/vyatta-interfaces.pl --action ${COMMIT_ACTION} --garp $VAR(.),$VAR(@)";
+				}
+				refine gratuitous-arp/reply {
+					configd:update "/opt/vyatta/sbin/vyatta-interfaces.pl --action ${COMMIT_ACTION} --garp $VAR(.),$VAR(@)";
+					configd:delete "/opt/vyatta/sbin/vyatta-interfaces.pl --action ${COMMIT_ACTION} --garp $VAR(.),$VAR(@)";
+				}
+			}
+			leaf disable-redirects {
+				type empty;
+				configd:help "Disable IPv4 ICMP redirects";
+				configd:create "/opt/vyatta/share/tmplscripts/system/ip/disable-redirects/configd_create.sh";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/ip/disable-redirects/configd_delete.sh";
+			}
+		}
+		container ipv6 {
+			presence "true";
+			configd:help "IPv6 settings";
+			leaf disable {
+				type empty;
+				configd:priority "400";
+				configd:help "Disable assignment of IPv6 addresses on all interfaces";
+				configd:create "vyatta-ipv6-disable create";
+				configd:delete "vyatta-ipv6-disable delete";
+			}
+			leaf strict-dad {
+				type empty;
+				configd:priority "290";
+				configd:help "Disable IPv6 operation on interface when DAD fails on LL addr";
+				configd:create "/opt/vyatta/share/tmplscripts/system/ipv6/strict-dad/configd_create.sh";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/ipv6/strict-dad/configd_delete.sh";
+			}
+			container neighbor {
+				presence "true";
+				configd:priority "400";
+				configd:help "Parameters for Neighbor cache";
+				leaf table-size {
+					type enumeration {
+						enum "1024";
+						enum "2048";
+						enum "4096";
+						enum "8192";
+						enum "16384";
+						enum "32768";
+					}
+					configd:help "Maximum number of entries to keep in the Neighbor cache";
+					default "8192";
+					configd:allowed "/opt/vyatta/share/tmplscripts/system/ipv6/neighbor/table-size/configd_allowed.sh";
+					configd:update "/opt/vyatta/share/tmplscripts/system/ipv6/neighbor/table-size/configd_update.sh";
+				}
+			}
+			leaf disable-forwarding {
+				type empty;
+				configd:priority "400";
+				configd:help "Disable IPv6 forwarding on all interfaces";
+				configd:create "/opt/vyatta/share/tmplscripts/system/ipv6/disable-forwarding/configd_create.sh";
+				configd:delete "/opt/vyatta/share/tmplscripts/system/ipv6/disable-forwarding/configd_delete.sh";
+			}
+			leaf disable-redirects {
+			     type empty;
+			     configd:help "Disable IPv6 ND redirects";
+			     configd:create "ip6_disable_redirects --action=true";
+			     configd:delete "ip6_disable_redirects --action=false";
+			}
+		}
+	}
+
+	grouping system-network-name-server-static-hosts {
+		leaf-list name-server {
+			type union {
+				type types:ipv4-address;
+				type types:ipv6-address;
+			}
+			ordered-by "user";
+			configd:priority "400";
+			configd:help "Domain Name Server (DNS)";
+			configd:create "/opt/vyatta/share/tmplscripts/system/name-server/configd_create.sh";
+			configd:delete "/opt/vyatta/share/tmplscripts/system/name-server/configd_delete.sh";
+		}
+		container static-host-mapping {
+			presence "true";
+			configd:priority "400";
+			configd:help "Map host names to addresses";
+			list host-name {
+				configd:help "Host name for static address mapping";
+				configd:end "/opt/vyatta/share/tmplscripts/system/static-host-mapping/host-name/configd_end.sh";
+				configd:validate "/opt/vyatta/share/tmplscripts/system/static-host-mapping/host-name/configd_validate1.cli";
+				key "tagnode";
+				leaf tagnode {
+					type string {
+						pattern '[0-9A-Za-z][-\.0-9A-Za-z]*[0-9A-Za-z]';
+					}
+					configd:help "Host name for static address mapping";
+				}
+				leaf inet {
+					type union {
+						type types:ipv4-address;
+						type types:ipv6-address;
+					}
+					configd:help "Address [REQUIRED]";
+				}
+				leaf-list alias {
+					type string;
+					ordered-by "user";
+					configd:help "Alias for this address";
+				}
+			}
+		}
+	}
+
+	augment /system:system {
+		uses system-network-domain;
+		uses system-network-hostname-ipinfo;
+		uses system-network-name-server-static-hosts;
+	}
+}

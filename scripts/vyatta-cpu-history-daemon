@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+#dbus imports
+import dbus
+import dbus.service
+import dbus.mainloop.glib
+import gi.repository.GLib
+
+#Other necessary libraries
+import subprocess
+import os.path
+from collections import deque
+import sched, time, datetime
+from threading import Event, Thread
+
+#Standard includes (for logging)
+import syslog
+
+#Constant defined for the thread cycle delay interval
+#Make -1 from required interval; sar command adds 1 sec on every initial read
+THREAD_CYCLE_DELAY = 29
+ENTRIES_PER_MINUTE = 60/(THREAD_CYCLE_DELAY+1)
+#The maximum interval in mins being used (originally 72 hours/4320 minutes)
+MAX_INTERVAL = 4320
+#The max allowed number of data entries for 72 hours (4320 minutes)
+MAX_DATA_ENTRIES = int(MAX_INTERVAL*ENTRIES_PER_MINUTE)
+
+#DBUS constant definitions
+DBUS_INTERFACE = 'net.vyatta.eng.cpu.history'
+DBUS_OBJECT    = '/net/vyatta/eng/cpu/history'
+DATA_INTERFACE = 'net.vyatta.eng.cpu.history.Data'
+
+#Feature flag path
+FEATURE_FLAG = "/opt/vyatta/etc/features/vyatta-op-show-hardware-cpu-v1/cpu-history"
+
+#List used to iterate through the various CPU utilization categories
+utilizationTypes = ['user', 'nice', 'system', 'iowait', 'steal', 'idle']
+
+#Definition and initialization of the pre-averaged data dictionary
+#Deques used to hold data for respective cpu categories so max size can be set
+totalDataDict = {}
+for key in utilizationTypes:
+  totalDataDict[key] = deque([], maxlen=(MAX_DATA_ENTRIES))
+
+#List containing intervals (in minutes) for iteration purposes
+#Intervals must be in ascending order! Otherwise data will not be sorted
+INTERVALS = [1, 60, MAX_INTERVAL]
+
+#Global variable keeps track of the number of data entries that have been made
+numDataEntries = 0
+
+daemon_name = 'vyatta-cpu-history-daemon'
+
+def populateCPUData():
+   global numDataEntries
+   CPUData = []
+   missingData = True
+   try:
+     for interval in INTERVALS:
+        currentDict = {}
+        #Has to be a float for dbus communication to work
+        currentDict['interval'] = float(interval)
+        for key in totalDataDict.keys():
+           numDataPoints = int(interval * ENTRIES_PER_MINUTE)
+           #If more data entries exist than what's allowed by the time interval
+           if(numDataEntries >= numDataPoints):
+              curDataList = list(totalDataDict[key])
+              newDataList = curDataList[(-numDataPoints):]
+              currentDict[key] = float(sum(newDataList)/float(len(newDataList)))
+           #If less data entries exist than what's required by the interval
+           else:
+              if(missingData):
+                 currentDict['interval'] = (float(numDataEntries)
+                 	/float(ENTRIES_PER_MINUTE))
+                 missingData = False
+              curDataList = list(totalDataDict[key])
+              newDataList = curDataList[(-numDataEntries):]
+              currentDict[key] = float(sum(newDataList)/float(len(newDataList)))
+        missingData = True
+        CPUData.append(currentDict)
+     return CPUData
+   except:
+     pass
+
+sarLog_thread_event = Event()
+def sarLog_func():
+   global numDataEntries
+   try:
+     while sarLog_thread_event.is_set():
+        #Running the sar command through the subprocess library
+        args = ['sar', '1', '1']
+        sarOut = str(subprocess.check_output(args))
+        index = sarOut.find('Average:')
+        finalOut = sarOut[index+9:]
+        ts = time.time()
+        timeStamp = (datetime.datetime.utcfromtimestamp(ts)
+        .strftime('%Y-%m-%d %H:%M:%S'))
+        numDataEntries+=1
+        stripped = finalOut.strip("\\n'")
+        dataList = stripped.split()
+        #Index begins at 1 since the first 'slice' of the data string is "ALL"
+        sliceIndex = 1
+        for key in utilizationTypes:
+          totalDataDict[key].append(float(dataList[sliceIndex]))
+          sliceIndex+=1
+        time.sleep(THREAD_CYCLE_DELAY)
+   except:
+     pass
+
+
+class Service(dbus.service.Object):
+   def __init__(self):
+      self._data = None
+
+   def run(self):
+      dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+      system_bus = dbus.SystemBus()
+      bus_name = dbus.service.BusName(DBUS_INTERFACE, system_bus)
+      dbus.service.Object.__init__(self, bus_name, DBUS_OBJECT)
+      self._loop = gi.repository.GLib.MainLoop()
+      print("Service running...")
+      self._loop.run()
+      print("Service stopped")
+
+   @dbus.service.method(DATA_INTERFACE, in_signature='', out_signature='aa{sd}')
+   def get_data(self):
+      self._data = populateCPUData()
+      return self._data
+
+if __name__ == "__main__":
+   if(os.path.exists(FEATURE_FLAG)):
+      syslog.openlog(daemon_name, facility=syslog.LOG_DAEMON)
+      syslog.syslog(syslog.LOG_INFO, '{} started.'.format(daemon_name))
+      try:
+        #Threading to simultaneously log sar data and listen for client queries
+        sarLog_thread_event.set()
+        sarLog_thread = Thread(target=sarLog_func)
+        sarLog_thread.start()
+        Service().run()
+        exit(1)
+      except(SystemExit, KeyboardInterrupt):
+        sarLog_thread_event.clear()
+        sarLog_thread.join()
+        exit(0)

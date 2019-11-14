@@ -1,0 +1,58 @@
+#!/usr/bin/make -f
+#
+# This debian/rules uses debhelper.
+#
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+CFLAGS += -Wall -Wextra -Werror
+
+override_dh_auto_configure:
+	dh_auto_configure -- --prefix=/opt/vyatta --sysconfdir=/opt/vyatta/etc --mandir=/usr/share/man CFLAGS="$(CFLAGS)"
+
+# verbose output of unittest logs
+override_dh_auto_test:
+	dh_auto_test -- VERBOSE=1
+
+# *.yang files and related templates are distributed via debian install files
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/vyatta-system
+	mkdir -p debian/tmp/usr/share
+	mv debian/vyatta-system/usr/share/configd debian/tmp/usr/share
+	mkdir -p debian/tmp/opt/vyatta/share/vyatta-op/templates/show/log
+	mv debian/vyatta-system/opt/vyatta/share/vyatta-op/templates/show/log/node.def debian/tmp/opt/vyatta/share/vyatta-op/templates/show/log
+
+override_dh_install:
+	dh_install
+	mkdir -p debian/vyatta-system-syslog-v1-yang/lib/systemd/system/rsyslog.service.d
+	install --mode=644 debian/vyatta-syslog-snmptrap.conf \
+		debian/vyatta-system-syslog-v1-yang/lib/systemd/system/rsyslog.service.d
+	mkdir -p debian/vyatta-system-syslog-v1-yang/lib/systemd/system/systemd-journald.service.d
+	install --mode=644 debian/vyatta-systemd-journald-snmptrap.conf \
+		debian/vyatta-system-syslog-v1-yang/lib/systemd/system/systemd-journald.service.d
+
+override_dh_systemd_start:
+	dh_systemd_start --no-start \
+		debian/clear-system-config.service \
+		debian/generate-ssh-banner.service \
+		debian/system-configure.service \
+		debian/system-preconfigure.service \
+		debian/vyatta-cpu-history-daemon.service \
+		debian/vyatta-platform-setup.service \
+		debian/vyatta-pre-boot.target
+
+override_dh_systemd_enable:
+	dh_systemd_enable --name=vyatta-system.clear-system-config
+	dh_systemd_enable --name=vyatta-system.generate-ssh-banner
+	dh_systemd_enable --name=vyatta-system.system-configure
+	dh_systemd_enable --name=vyatta-system.system-preconfigure
+	dh_systemd_enable --name=vyatta-system.vyatta-cpu-history-daemon
+	dh_systemd_enable --name=vyatta-system.vyatta-platform-setup
+	dh_systemd_enable --name=vyatta-system.vyatta-pre-boot.target
+
+
+%:
+	dh $@ --with autoreconf --with systemd --with=yang

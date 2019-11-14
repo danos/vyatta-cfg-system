@@ -1,0 +1,2 @@
+help: File location
+run: ${vyatta_bindir}/vyatta-show-licenses.pl --write-licenses-file ${@:5}

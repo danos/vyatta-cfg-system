@@ -1,0 +1,2 @@
+help: Monitor last lines of messages file
+run: tail --follow=name /var/log/messages 2> /dev/null

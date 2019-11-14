@@ -1,0 +1,15 @@
+[Unit]
+Description=Configure system
+Wants=system-preconfigure.service
+After=system-preconfigure.service
+Requires=vyatta-pre-boot.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/system-configure
+ExecStart=/opt/vyatta/sbin/lu -user configd -- /opt/vyatta/sbin/system-postconfigure
+StandardOutput=syslog
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=config-loaded.target

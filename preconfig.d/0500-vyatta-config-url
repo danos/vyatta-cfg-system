@@ -1,0 +1,63 @@
+#!/bin/bash
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# An preconfig.d script that runs a boot time to retrieve the default
+# boot configuration from an URL.
+#
+
+. /lib/lsb/init-functions
+
+: "${vyatta_env:=/etc/default/vyatta}"
+source "$vyatta_env"
+
+fetch_vyatta_config () {
+    declare -r URL="$1"
+
+    local TMPFILE
+    TMPFILE=$(mktemp -t "$(basename "$0").XXXXXXXX") || return
+    trap 'rm -f ${TMPFILE}' RETURN
+
+    log_progress_msg "curl"
+    if ! RES=$(curl --silent --show-error --output "${TMPFILE}" --location "${URL}" 2>&1); then
+        echo ": ${RES}" 1>&2
+        log_end_msg 1
+        return
+    fi
+
+    TYPE=$(file --brief --uncompress --mime-type "${TMPFILE}")
+    case "${TYPE}" in
+        application/x-tar)
+            log_progress_msg "/config archive"
+            TAR_ARGS=
+            if tar -tf "${TMPFILE}" config/ >/dev/null 2>&1 ; then
+                TAR_ARGS="--strip-component=1 config/"
+            fi
+            tar -xf "${TMPFILE}" -C /config ${TAR_ARGS}
+            ;;
+        text/plain)
+            log_progress_msg "config.boot"
+            cp -f "${TMPFILE}" /config/config.boot
+            ;;
+        *)
+            log_progress_msg "unknown configuration"
+            false
+            ;;
+    esac
+
+    log_end_msg $?
+}
+
+set -- "$(cat /proc/cmdline)"
+for cmd in $@; do
+    case "${cmd}" in
+        (vyatta-config=*)
+            URL="${cmd#*=}"
+            [ -z "${URL}" ] || fetch_vyatta_config "$URL"
+            ;;
+    esac
+done

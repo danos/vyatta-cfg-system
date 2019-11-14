@@ -1,0 +1,4 @@
+# Force screenblanker to be off, it can be enabled later if desired
+BLANK_TIME=0
+BLANK_DPMS=off
+POWERDOWN_TIME=0

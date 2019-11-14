@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+delete:expression: exec "ln -fs /usr/share/zoneinfo/GMT /etc/localtime"

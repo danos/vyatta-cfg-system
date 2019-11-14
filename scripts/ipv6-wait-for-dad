@@ -1,0 +1,81 @@
+#! /usr/bin/perl
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Script to wait for DAD so that addresses are no longer tentative and have been
+# assigned to the relevant interface, unless they have failed DAD.
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use File::Slurp;
+use List::Util qw(any);
+use Vyatta::Address;
+use Vyatta::RestoreIPv6Addr;
+
+# Get interface admin state
+sub admin_state {
+    my $name = shift;
+    my $state =
+      read_file( "/sys/class/net/$name/operstate", err_mode => 'quiet' );
+    return if ( !defined($state) );
+
+    chomp $state;
+    return $state;
+}
+
+# Wait for dad to complete for addresses on an interface
+sub wait_for_dad {
+    my $name = shift;
+
+    my ( $dad_on, $retry_sec, $retry_n ) =
+      Vyatta::Address::ipv6_dad_config($name);
+
+    for ( my $retries = 0 ; $$dad_on and $retries <= $$retry_n ; $retries++ ) {
+        my $output = qx(ip -6 addr show dev $name);
+        return
+          if length($output)
+          && ( $output !~ /tentative/ || $output =~ /dadfailed/ );
+        sleep $$retry_sec;
+    }
+}
+
+# Wait for dad to complete for addresses on a set of interfaces
+sub dad_wait {
+    while ( my $name = shift ) {
+        my $state = admin_state($name);
+        next if !defined($state) || $state eq "down";
+
+        my $disabled = Vyatta::RestoreIPv6Addr::ipv6_disabled($name);
+        next if !defined($disabled) || $disabled;
+
+        wait_for_dad($name);
+    }
+}
+
+sub usage {
+    print "Usage: $0 [<ifname>]\n";
+    exit 1;
+}
+
+my $ifname;
+my @ifnames;
+
+if ( $#ARGV > 0 ) {
+    usage();
+} elsif ( $#ARGV == 0 ) {
+    $ifname = $ARGV[0];
+}
+
+@ifnames = split( ' ', qx(ls -I "vrf*" -I "lo*" /sys/class/net) );
+
+if ( defined($ifname) ) {
+    usage() unless any { $_ eq $ifname } @ifnames;
+    @ifnames = ($ifname);
+}
+
+dad_wait(@ifnames);
+

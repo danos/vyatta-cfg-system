@@ -1,0 +1,3 @@
+help: Reconfigure console keyboard layout
+run: dpkg-reconfigure -f dialog keyboard-configuration
+     service keyboard-setup restart

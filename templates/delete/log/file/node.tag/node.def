@@ -1,0 +1,7 @@
+help: Delete the specified log file
+allowed:  local -a array ;
+          shopt -s nullglob ;
+          array=( /var/log/user/* ) ;
+          [ ${#array[@]} -gt 0 ] && echo -n ${array[@]##*/}
+run: ${vyatta_sbindir}/vyatta-delete-log-file "$4"
+     service rsyslog restart

@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+use strict;
+use warnings;
+
+use File::Spec::Functions;
+
+sub delete_log_file {
+    my ( $log_dir, $filename ) = @_;
+    my $archive_pattern = "$filename\\.(\\d+|\\d+\\.\\w)";
+    my $found = 0;
+    opendir( my $dh, $log_dir ) || die "Can not open $log_dir.\n";
+    while ( readdir $dh ) {
+        if ( $_ eq "." || $_ eq ".." ) {
+            next;
+        }
+        if ( $_ eq $filename || $_ =~ /$archive_pattern/) {
+            my $filepath = catfile( $log_dir, $_ );
+            unlink($filepath) || die "Can not delete $filepath.\n";
+	    $found = 1;
+        }
+    }
+    if ( not $found ) {
+	die "File $filename does not exist in $log_dir.\n";
+    } else {
+	return 0;
+    }
+}
+
+delete_log_file( '/var/log/user', $ARGV[0] );

@@ -1,0 +1,10 @@
+[Unit]
+Description=Generate SSH banner
+ConditionPathExists=!/etc/issue.ssh
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/vyatta-banner.pl --action=generate-ssh
+
+[Install]
+WantedBy=multi-user.target

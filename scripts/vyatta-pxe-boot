@@ -1,0 +1,74 @@
+#!/bin/bash
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/lsb/init-functions
+
+#
+# Get the boot interface mac from /proc/cmdline
+#
+# From the PXELINUX docs (http://www.syslinux.org/wiki/index.php/PXELINUX):
+#  For example, for an Ethernet (ARP type "1") with address "88:99:AA:BB:CC:DD",
+#  it would search for the filename "01-88-99-aa-bb-cc-dd".
+#
+_get_boot_mac () {
+
+    local BOOTIF
+
+    BOOTIF="$(sed -n -e 's/^.*\(BOOTIF=\)//p' "$1")"
+    BOOTIF=${BOOTIF##[[:space:]]}
+    BOOTIF=${BOOTIF%%[[:space:]]}
+
+    # cut leading '01-' as passed from pxelinux
+    if [ ${#BOOTIF} -eq 20 ]; then
+	BOOTIF=${BOOTIF#01-}
+    fi
+
+    echo -n "${BOOTIF}" | tr '-' ':' \
+	| grep -io '^\([0-9A-F]\{2\}[:-]\)\{5\}\([0-9A-F]\{2\}\)\([[:space:]].*\)\{,1\}$' \
+	| cut -d ' ' -f1
+
+}
+export -f _get_boot_mac
+
+# Write to vyatta configuration file
+_write_to_config () {
+
+    local pxe_boot_if=$1
+    local config_boot=$2
+
+    #Check if interface already has an address
+    HAS_ADDR=$(sed -n "N;s/^.*\(dataplane ${pxe_boot_if} {\n        \)//p" \
+	"${config_boot}" | head -n 1 | cut -f 1 -d " ")
+
+    if [ -z "$HAS_ADDR" ] ; then
+	#Start dhcp on PXE Interface
+	sed -i "/interfaces {/a \    dataplane ${pxe_boot_if} {\n        address dhcp\n    }" \
+	    "${config_boot}"
+    fi
+
+}
+export -f _write_to_config
+
+# Start DHCP in dataplane on pxe boot interface
+start_dhcp_pxe_boot () {
+
+    local config_boot=$1
+    PXE_BOOT_MAC=$(_get_boot_mac /proc/cmdline)
+
+    # Match MAC address to interface
+    if [ -n "$PXE_BOOT_MAC" ] ; then
+	IP_OUT=$(ip -oneline link | grep -i "$PXE_BOOT_MAC" | head -n 1)
+
+	PXE_BOOT_IF=$( echo "$IP_OUT" | grep -oh '[0-9]*: [a-z0-9]*' | cut -d " " -f2)
+
+	_write_to_config "$PXE_BOOT_IF" "${config_boot}"
+	log_daemon_msg "PXE Boot interface found, starting DHCP on $PXE_BOOT_IF"
+    fi
+
+}
+export -f start_dhcp_pxe_boot

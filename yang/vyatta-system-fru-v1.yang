@@ -1,0 +1,147 @@
+module vyatta-system-fru-v1 {
+    namespace "urn:vyatta.com:mgmt:vyatta-system-fru:1";
+    prefix vyatta-system-fru-v1;
+
+    import vyatta-system-sensor-v1 {
+        prefix hardware-sensor;
+    }
+    import vyatta-system-v1 {
+        prefix system;
+    }
+    import configd-v1 {
+        prefix configd;
+    }
+
+    organization "AT&T Inc.";
+    contact
+        "AT&T
+         Postal: 208 S. Akard Street
+                 Dallas, TX 75202
+         Web: www.att.com";
+
+    description
+        "Copyright (c) 2019, AT&T Intellectual Property.
+         All rights reserved.
+
+         Redistribution and use in source and binary forms, with or without
+         modification, are permitted provided that the following conditions
+         are met:
+
+         1. Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+         2. Redistributions in binary form must reproduce the above
+            copyright notice, this list of conditions and the following
+            disclaimer in the documentation and/or other materials provided
+            with the distribution.
+         3. Neither the name of the copyright holder nor the names of its
+            contributors may be used to endorse or promote products derived
+            from this software without specific prior written permission.
+
+         THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+         'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+         LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+         FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+         COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+         INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+         BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+         LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+         CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+         LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+         ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+         POSSIBILITY OF SUCH DAMAGE.
+
+         SPDX-License-Identifier: BSD-3-Clause
+
+         Provides the config:false nodes within the main config tree for the
+         show hardware fru operational CLI command.";
+
+    revision 2019-05-08 {
+        description "Initial version";
+    }
+
+    grouping board-fru-data {
+        leaf board-manufacture-date {
+            description "Manufactured date of field-replaceable unit (FRU) board";
+            type string;
+        }
+        leaf board-manufacturer {
+            description "Manufacturer of field-replaceable unit (FRU) board";
+            type string;
+        }
+        leaf board-product-name {
+            description "Product information of field-replaceable unit (FRU) board";
+            type string;
+        }
+        leaf board-serial-number {
+            description "Serial number of field-replaceable unit (FRU) board";
+            type string;
+        }
+        leaf board-part-number {
+            description "Part number of field-replaceable unit (FRU) board";
+            type string;
+        }
+    }
+
+    grouping product-fru-data {
+        leaf product-manufacturer {
+            description "Manufacturer of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-name {
+            description "Name of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-part-number {
+            description "Part number of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-version {
+            description "Version of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-serial-number {
+            description "Serial number of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-asset-tag {
+            description "Asset Tag of field-replaceable unit (FRU) product";
+            type string;
+        }
+        leaf product-extra {
+            description "Extra information of field-replaceable unit (FRU) product";
+            type string;
+        }
+    }
+
+    grouping hardware-fru-list {
+        list fru {
+            description "List of field-replaceable units (FRU) on the system";
+            configd:get-state "/opt/vyatta/bin/yangop-get-fru fru";
+            key "fru-name";
+            leaf fru-name {
+                description "Name of field-replaceable unit (FRU)";
+                type string;
+            }
+            leaf id {
+                description "ID for the field-replaceable unit (FRU)";
+                type uint32 {
+                    range 0..2147483647;
+                }
+            }
+            uses board-fru-data;
+            uses product-fru-data;
+        }
+    }
+
+    grouping hardware-fru {
+        container frus {
+            description "Field-replaceable unit (FRU) information for the system";
+            config false;
+            uses hardware-fru-list;
+        }
+    }
+
+    augment /system:system/hardware-sensor:hardware {
+        uses hardware-fru;
+    }
+}

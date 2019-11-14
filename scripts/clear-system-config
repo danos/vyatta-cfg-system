@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+echo "=== Running clear-system-config ==="
+
+# If config.boot exists, then this is either initial install or a rollback.
+# In such cases, we need to remove any VCI component config (as listed in
+# DotComponent files as 'ConfigFile=') before continuing to boot. Otherwise
+# we can end up with components out of sync.
+#
+# One or two components have used '/dev/null' to indicate no config file
+# so we don't attempt to remove this!
+#
+if [ -f "/config/config.boot" ]; then
+	echo "Removing config files:"
+
+	files=`grep ConfigFile= /lib/vci/components/*.component | cut -d= -f2-`
+	for line in $files; do
+		IFS=','
+		for file in $line; do
+			if [ "$file" != "/dev/null" ] && [ -f "$file" ]; then
+				rm $file
+				echo " - $file"
+			fi
+		done
+	done
+fi

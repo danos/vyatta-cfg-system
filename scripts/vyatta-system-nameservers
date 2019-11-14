@@ -1,0 +1,126 @@
+#!/bin/bash
+#
+# Module: vyatta-system-nameservers
+#
+# **** License ****
+# Copyright (c) 2018-2019 AT&T Intellectual Property
+# All rights reserved.
+#
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2008 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Author: Mohit Mehta
+# Date: September 2008
+# Description: CLI back-end script for setting/deleting system nameservers
+#
+# **** End License ****
+#
+
+print_usage()
+{
+    echo "Usage:"
+    echo -e "\t$0 update <ip of name-server>"
+    echo -e "\t$0 delete <ip of name-server>"
+}
+
+restart_ntp ()
+{
+  # restart ntp if ntp is configured
+  if [ -f /etc/ntp.conf ] && grep -q "^server" /etc/ntp.conf; then
+     /usr/sbin/invoke-rc.d ntp try-restart >&/dev/null
+  fi
+}
+
+
+update_system_nameservers ()
+{
+  nameserver=$1
+  vrf=$2
+  if [[ -z "$vrf" ]]
+  then
+    resolv_conf_path=/etc/resolv.conf
+  else
+    resolv_conf_path=/run/dns/vrf/$vrf/resolv.conf
+  fi
+
+  [[ -d "/run/dns/vrf/$vrf" ]] || mkdir -p "/run/dns/vrf/$vrf"
+
+  touch "$resolv_conf_path"
+  # if name-server already in /etc/resolv.conf then exit
+  if grep -q "$nameserver\($\|[[:space:]]\)" "$resolv_conf_path"; then
+     exit 0
+  else
+	# find last instance of cli inserted nameserver
+	# insert currently received nameserver immediately after that
+	# this is done to keep system set nameservers priority over dhcp received nameservers
+	init_grepped_ns_line=$(tac "$resolv_conf_path" | grep -m 1 "nameserver.*# system")
+	grepped_ns_line=$(grep -n "$init_grepped_ns_line" "$resolv_conf_path")
+	line_num=${grepped_ns_line%%:*}
+	total_lines=$(wc -l <"$resolv_conf_path")
+	if [ "$total_lines" -eq 0 ] ; then
+		echo "# system nameservers added by $0. Do not edit" >> "$resolv_conf_path"
+		((++total_lines))
+	fi
+
+	if [ -z "$line_num" ] || [ "$line_num" -eq 0 ] ; then
+		line_num=1    # we know there is at least 1 line telling users not to edit
+	fi
+
+	if [ "$total_lines" -le "$line_num" ] || [ 0 -eq "$total_lines" ] ; then
+		echo "nameserver      $nameserver # system added by vyatta-system-nameservers" >> "$resolv_conf_path"
+	else
+		if [ "$total_lines" -gt "$line_num" ] ; then
+			((++line_num))
+		fi
+		sedcmd="sed -i \"$line_num i\\nameserver      $nameserver # system added by vyatta-system-nameservers\" $resolv_conf_path"
+		eval "$sedcmd"
+	fi
+  fi
+  restart_ntp
+}
+
+delete_system_nameserver ()
+{
+  nameserver=$1
+  vrf=$2
+  if [[ -z "$vrf" ]]
+  then
+    resolv_conf_path=/etc/resolv.conf
+  else
+    resolv_conf_path=/run/dns/vrf/$vrf/resolv.conf
+  fi
+
+  sed -i "/nameserver.*${nameserver}/d" "$resolv_conf_path"
+
+  restart_ntp
+}
+
+
+#
+# main
+#
+
+case "$1" in
+    update)
+        update_system_nameservers "$2" "$3"
+        exit 0
+        ;;
+
+    delete)
+        delete_system_nameserver "$2" "$3"
+        exit 0
+        ;;
+
+
+    *)
+        print_usage
+        exit 1
+        ;;
+
+esac

@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# **** License ****
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+# **** End License ****
+#
+# A post-configuration script to enable the DHCP client for the specified
+# boot interface.
+#
+
+. /lib/lsb/init-functions
+
+source "${vyatta_sbindir}/vyatta-pxe-boot"
+
+BOOTIF_HWADDRS=$(_get_boot_mac /proc/cmdline)
+
+for file in /run/net-*.conf; do
+    source "${file}"
+    [ "${PROTO}" != 'dhcp' ] && continue
+    BOOTIF_HWADDRS="${BOOTIF_HWADDRS} ${HWADDR}"
+done
+
+for device in /sys/class/net/* ; do
+    dev=${device##*/}
+    [ "$dev" == "lo" ] && continue
+
+    echo "${BOOTIF_HWADDRS}" | grep -q "$(cat "/sys/class/net/${dev}/address")"
+    if [ $? == 0 ] ; then
+	BOOTIF_NAMES="${BOOTIF_NAMES} ${dev}"
+    fi
+done
+
+[ -z "${BOOTIF_NAMES}" ] && exit 0
+
+log_success_msg "Boot interface found, starting DHCP: ${BOOTIF_NAMES}"
+
+export BOOTIF_NAMES
+
+#
+# Required to run this as a login shell under configd.
+#
+/opt/vyatta/sbin/lu -user configd -- /bin/vcli <<"EOF"
+configure
+for i in ${BOOTIF_NAMES}; do
+  addr=($(list interfaces dataplane $i address))
+  if [ -z ${addr[@]} ]; then
+    set interfaces dataplane $i address dhcp
+  fi
+done
+commit
+end_configure
+EOF

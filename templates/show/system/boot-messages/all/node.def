@@ -1,0 +1,12 @@
+help: Show all kernel boot messages
+run: if [ -d /run/systemd/system ]; then
+         num_boots=`journalctl --list-boots | wc -l`
+         boot=0
+         while [ $boot -lt $num_boots ]
+         do
+             boot=$((boot+1))
+             journalctl -k -o short-monotonic --no-tail -b+$boot  | sed -e "s/ vyatta kernel://g" | sed -e "/Logs begin at/d" 
+         done 
+     else
+         cat `printf "%s\n" /var/log/dmesg* | sort -nr`
+     fi

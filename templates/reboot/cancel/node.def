@@ -1,0 +1,2 @@
+help: Cancel a pending reboot
+run: ${vyatta_bindir}/vyatta-shutdown.pl --action reboot_cancel

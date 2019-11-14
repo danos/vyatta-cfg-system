@@ -1,0 +1,2 @@
+help: Show scheduled poweroff
+run: ${vyatta_bindir}/vyatta-shutdown.pl --action poweroff_show

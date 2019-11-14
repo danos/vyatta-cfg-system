@@ -1,0 +1,11 @@
+[Unit]
+Description=Vyatta CPU History Daemon
+After=system-configure.service
+ConditionPathExists=/opt/vyatta/etc/features/vyatta-op-show-hardware-cpu-v1/cpu-history
+
+[Service]
+ExecStart=/opt/vyatta/sbin/vyatta-cpu-history-daemon
+Restart=on-failure
+
+[Install]
+RequiredBy=config-loaded.target

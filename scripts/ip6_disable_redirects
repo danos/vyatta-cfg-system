@@ -1,0 +1,35 @@
+#! /usr/bin/perl
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+use strict;
+use warnings;
+use lib '/opt/vyatta/share/perl5';
+use Getopt::Long;
+use Vyatta::Config;
+use Vyatta::VPlaned;
+
+my ($action);
+
+sub set_ip6_redirects_action {
+    my $cstore = new Vyatta::VPlaned;
+    my $cmd = "ip6";
+
+    if ( $action eq 'true' ) {
+	$cstore->store( "$cmd", "$cmd redirects disable", "ALL", "SET" );
+    } else {
+	$cstore->store( "$cmd", "$cmd redirects enable", "ALL", "SET" );
+    }
+}
+
+sub usage {
+    print "Usage: $0 [--action=true/false]\n";
+    exit 1;
+}
+
+GetOptions( 'action=s' => \$action, ) or usage();
+
+set_ip6_redirects_action() if defined( $action );

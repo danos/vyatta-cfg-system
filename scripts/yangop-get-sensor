@@ -1,0 +1,586 @@
+#!/usr/bin/python3
+
+from datetime import datetime
+import time
+import enum
+import json
+import re
+import subprocess
+import sys
+import os
+
+from decimal import Decimal, InvalidOperation
+
+HIGHVAL = Decimal(1000000000)
+DIGITS = HIGHVAL.adjusted()
+MAX_SCALE = 6
+MIN_SCALE = -MAX_SCALE
+
+def err(msg):
+    print(msg, file=sys.stderr)
+
+# Parses input string into Sensor name and ID
+# Input example : CPU Temp (0x1)
+# Output example :
+#     name : 'CPU Temp'
+#     index : 1
+def parse_sensor_id(value):
+    if value is not None:
+        l = value.split(' (')
+        id = l[1].split(')')
+        return { 'name': l[0], 'index' : int(id[0], 0) }
+
+def get_sensor_type_threshold(x):
+    if x is None:
+        return {}
+
+    return {'threshold_sensor': True, 'discrete_sensor': False}
+
+def get_sensor_type_discrete(x):
+    if x is None:
+        return {}
+
+    return {'threshold_sensor': False, 'discrete_sensor': True}
+
+# Return sensor related values
+# Input example : 40 (+/- 0) degrees C
+# Output example :
+#     value : 40000
+#     scale : units
+#     precision : 3
+#     unit_display : degrees C
+#     unit : celsius
+def get_sensor_reading(x):
+    def get_group(m,g):
+        s = None
+        try:
+            s = m.group(g)
+        except:
+            pass
+        return s
+
+    m = re.match(r"^\s*(?P<reading>(No Reading)|(Disabled)|(\d+h)|([-+]?\d*\.\d+|\d+))(\s+\(\+/- (?P<tolerance>\d+(\.\d+)?)\)\s+(?P<unit>[a-zA-Z ]*[a-zA-Z]))?\s*$", x)
+    if m is None:
+        return None
+
+    sr = { k : get_group(m,k) for k in ['reading', 'unit' ] }
+    vsp = get_value_scale_precision(sr['reading'], sr['unit'])
+    return { 'value': vsp[0], 'scale' : vsp[1], 'precision': vsp[2],
+             'unit_display' : sr['unit'], 'unit' : str2units((sr['unit'])) }
+
+# Return sensor status
+# Input example : ok
+# Output example :
+#    op_status : ok
+def get_sensor_status(x):
+    status_translate = {None: 'unavailable',
+                        'Not Available': 'unavailable',
+                        'Lower Non-Critical': 'ok',
+                        'Upper Non-Critical': 'ok',
+                        'Lower Critical': 'ok',
+                        'Upper Critical': 'ok',
+                        'Lower Non-Recoverable': 'nonoperational',
+                        'Upper Non-Recoverable': 'nonoperational'}
+    return { 'op_status': status_translate.get(x, x) }
+
+def get_sensor_unr(x):
+    return { 'upper_non_recov': x }
+
+def get_sensor_ucr(x):
+    return { 'upper_crit': x }
+
+def get_sensor_unc(x):
+    return { 'upper_non_crit': x }
+
+def get_sensor_lnr(x):
+    return { 'lower_non_recov': x }
+
+def get_sensor_lcr(x):
+    return { 'lower_crit': x }
+
+def get_sensor_lnc(x):
+    return { 'lower_non_crit': x }
+
+ipmi_tool_key = {
+    'Sensor ID' : parse_sensor_id,
+    'Sensor Type (Threshold)' : get_sensor_type_threshold,
+    'Sensor Type (Discrete)' : get_sensor_type_discrete,
+    'Sensor Reading' : get_sensor_reading,
+    'Status' : get_sensor_status,
+    'Upper non-recoverable' : get_sensor_unr,
+    'Upper critical' : get_sensor_ucr,
+    'Upper non-critical' : get_sensor_unc,
+    'Lower non-recoverable' : get_sensor_lnr,
+    'Lower critical' : get_sensor_lcr,
+    'Lower non-critical' : get_sensor_lnc
+    }
+
+def create_sensors(d):
+    fields = {}
+    for k,v in ipmi_tool_key.items():
+        ret = v(d.get(k))
+        if ret is None:
+            continue
+
+        fields.update(ret)
+
+    if fields['op_status'] == 'unavailable' and fields['discrete_sensor']:
+        fields['op_status'] = 'notapplicable'
+
+    del fields['discrete_sensor']
+    del fields['threshold_sensor']
+
+    s = Sensor(**fields)
+    s.prep()
+    return s
+   
+class Scale(enum.Enum):
+    micro = -6
+    milli = -3
+    units = 0
+    kilo = 3
+    mega = 6
+
+class Status(enum.Enum):
+    ok = 1
+    unavailable = 2
+    nonoperational = 3
+
+class Precision(enum.Enum):
+    volts = 3
+    celsius = 2
+    rpm = 0
+
+def default_precision(s):
+    try:
+        return Precision[s]
+    except KeyError:
+        return 3
+
+def str2units(s):
+    d = {
+        'C' : 'celsius',
+        'degrees C' : 'celsius',
+        'RPM' : 'rpm',
+        'V' : 'volts',
+        'Volts' : 'volts'
+    }
+    return d.get(s)
+
+def sign(x):
+    return (1, -1)[x < 0]
+
+# Calculates value, scale and precision for the sensor reading.
+# Input example : 40 degrees C
+# Output example :
+#     value : 40000,
+#     scale : units,
+#     precision : 3
+def get_value_scale_precision(v, unit):
+    """
+        Return dict containing precision, value, scale
+        v = Value in Decimal
+        r = resolution in Decimal
+        high = max value
+        low = min value
+        unit = needed to figure out the default precision
+    """
+    try:
+        val = Decimal(v).normalize()
+    except InvalidOperation:
+        return (0, Scale(0).name, 0)
+
+    # get most significant digit
+    msd = val.adjusted() 
+    
+    # overflow or underflow
+    scale = 0
+    p = 0
+    if msd > (DIGITS + MAX_SCALE - 1):
+        x = HIGHVAL.copy_sign(val)
+        return (int(x.to_integral()), Scale(scale).name, p)
+
+    # smaller than precision
+    if msd < (-9 + MIN_SCALE):
+        return (0, Scale(scale).name, p)
+
+    if abs(msd) + 1 > DIGITS:
+        scale = 3*int((abs(msd) - DIGITS + 3)/3)*sign(x)
+        p = 0
+        x = val * (Decimal(10) ** -scale)
+    else:
+        p = default_precision(unit)
+        if msd > 0 and p > 0 and (msd + p + 1) > DIGITS:
+            p = p + msd + 1 - DIGITS
+        x = val * (Decimal(10) ** p)
+     
+    return (int(x.to_integral()), Scale(scale).name, p)
+
+class Sensor:
+    """
+    Sensor Class. Contains a single sensor.
+    """
+    _attrs = {
+        'name' : 'name',
+        'index': 'id',
+        'value': 'value',
+        'unit':  'value-type',
+        'scale': 'value-scale',
+        'precision': 'value-precision',
+        'op_status': 'oper-status',
+        'unit_display': 'units-display',
+        'value_ts': 'value-timestamp',
+        'update_rate': 'value-update-rate',
+        'upper_non_recov': 'upper-non-recoverable',
+        'upper_crit': 'upper-critical',
+        'upper_non_crit': 'upper-non-critical',
+        'lower_non_recov': 'lower-non-recoverable',
+        'lower_crit': 'lower-critical',
+        'lower_non_crit': 'lower-non-critical',
+    }
+
+    def __init__(self, **kwargs):
+        self.name = None
+        self.index = None
+        self.value = None
+        self.unit = None
+        self.scale = None
+        self.precision = None
+        self.op_status = None
+        self.unit_display = None
+        self.value_ts = None
+        self.update_rate = None
+        self.upper_non_recov = None
+        self.upper_crit = None
+        self.upper_non_crit = None
+        self.lower_non_recov = None
+        self.lower_crit = None
+        self.lower_non_crit = None
+
+        [self.__setattr__(k, kwargs.get(k)) for k in self._attrs.keys()]
+        if self.name is None:
+            if self.index > 0:
+                self.name = str(self.index)
+            else:
+                raise ValueError
+
+    def prep(self):
+        if self.name is None:
+            if self.index is None:
+                raise ValueError
+            else:
+                self.name = "Sensor#{}".format(self.index)
+        if self.unit is None:
+            self.unit = 'other'
+        if self.op_status is None:
+            self.op_status = 'unavailable'
+        if self.unit_display is None:
+            self.unit_display = self.unit
+        if self.scale is None:
+            self.scale = 'units'
+        if self.precision is None:
+            self.precision = 0
+        if self.update_rate is None:
+            self.update_rate = 0
+        if self.value_ts is None:
+            d = datetime.utcnow()
+            self.value_ts = d.isoformat("T") + "Z"
+        if self.upper_non_recov is None:
+            self.upper_non_recov = 0
+        if self.upper_crit is None:
+            self.upper_crit = 0
+        if self.upper_non_crit is None:
+            self.upper_non_crit = 0
+        if self.lower_non_recov is None:
+            self.lower_non_recov = 0
+        if self.lower_crit is None:
+            self.lower_crit = 0
+        if self.lower_non_crit is None:
+            self.lower_non_crit = 0
+
+    def json_dict(self):
+        return {self._attrs[k]: v for (k,v) in self.__dict__.items()}
+
+    def __str__(self):
+        return "Sensors({})".format(str(self.__dict__))
+
+    def __repr__(self):
+        return "Sensors({})".format(repr(self.__dict__))
+
+'''
+ Reads and stores sensor data record.
+ Example:
+ Sensor ID              : CPU Temp (0x1)
+ Entity ID             : 3.1 (Processor)
+ Sensor Type (Threshold)  : Temperature (0x01)
+ Sensor Reading        : 39 (+/- 0) degrees C
+ Status                : ok
+ Nominal Reading       : 40.000
+ Normal Minimum        : -4.000
+ Normal Maximum        : 89.000
+ Upper non-recoverable : 104.000
+ Upper critical        : 104.000
+ Upper non-critical    : 99.000
+ Lower non-recoverable : 0.000
+ Lower critical        : 0.000
+ Lower non-critical    : 0.000
+ Positive Hysteresis   : 2.000
+ Negative Hysteresis   : 2.000
+ Minimum sensor range  : Unspecified
+ Maximum sensor range  : Unspecified
+ Event Message Control : Per-threshold
+ Readable Thresholds   : lnr lcr lnc unc ucr unr
+ Settable Thresholds   : lnr lcr lnc unc ucr unr
+ Threshold Read Mask   : lnr lcr lnc unc ucr unr
+ Assertion Events      :
+ Assertions Enabled    : ucr+
+ Deassertions Enabled  : ucr+
+
+Another example of a discrete sensor:
+Sensor ID              : BMC_LOADDEFAULT (0x3f)
+ Entity ID             : 7.51 (System Board)
+ Sensor Type (Discrete): System Firmwares (0x0f)
+ Sensor Reading        : 0h
+ Event Message Control : Per-threshold
+ States Asserted       : System Firmwares
+                         [State Deasserted]
+ Assertions Enabled    : System Firmwares
+                         [State Asserted]
+ OEM                   : 0
+'''
+def get_sensor_records():
+    cmd = ['ipmitool', 'sdr', '-v']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to load ipmitool command: {}".format(e))
+        return {}
+
+    r = {}
+    while True:
+        line = p.stdout.readline().decode()
+        if len(line) == 0 and p.poll() is not None:
+            break;
+        line = line.strip()
+        if len(line) > 0:
+            try:
+                k,v = line.split(':')
+                r[k.strip()] = v.strip()
+            except:
+                pass
+        elif len(r) > 0:
+            yield r
+            r = {}
+
+class SensorSEL:
+    """
+    Sensor SEL Class. Contains a single sensor sel entry
+    """
+    _attrs = {
+        'record_id' : 'record-id',
+        'name' : 'name',
+        'index': 'id',
+        'ts': 'timestamp',
+        'trigger_reading': 'trigger-reading',
+        'trigger_threshold': 'trigger-threshold',
+        'description': 'description',
+        'event': 'event',
+    }
+
+    def __init__(self, **kwargs):
+        self.record_id = None
+        self.name = None
+        self.index = None
+        self.ts = None
+        self.trigger_reading = None
+        self.trigger_threshold = None
+        self.description = None
+        self.event = None
+
+        [self.__setattr__(k, kwargs.get(k)) for k in self._attrs.keys()]
+        if self.name is None:
+            if self.index > 0:
+                self.name = str(self.index)
+            else:
+                raise ValueError
+
+    def prep(self):
+        if self.record_id is None:
+            self.record_id = 0
+        if self.name is None:
+            if self.index is None:
+                raise ValueError
+            else:
+                self.name = "Sensor#{}".format(self.index)
+        if self.ts is None:
+            d = datetime.utcnow()
+            self.ts = d.isoformat("T") + "Z"
+        if self.trigger_reading is None:
+            self.trigger_reading = 0
+        if self.trigger_threshold is None:
+            self.trigger_threshold = 0 
+        if self.description is None:
+            self.description = 'other'
+        if self.event is None:
+            self.event = 'other'
+
+    def json_dict(self):
+        return {self._attrs[k]: v for (k,v) in self.__dict__.items()}
+
+    def __str__(self):
+        return "Sels({})".format(str(self.__dict__))
+
+    def __repr__(self):
+        return "Sels({})".format(repr(self.__dict__))
+
+
+'''
+Gets sensor sel record by index and stores the entry.
+SEL Record ID          : 0001
+ Record Type           : 02
+ Timestamp             : 06/01/2018 21:43:16
+ Generator ID          : 0020
+ EvM Revision          : 04
+ Sensor Type           : Voltage
+ Sensor Number         : 30
+ Event Type            : Threshold
+ Event Direction       : Assertion Event
+ Event Data (RAW)      : 5200a1
+ Trigger Reading       : 0.156Volts
+ Trigger Threshold     : 10.299Volts
+ Description           : Lower Critical going low 
+
+Sensor ID              : 12V (0x30)
+ Entity ID             : 7.17
+ Sensor Type (Threshold)  : Voltage
+ Sensor Reading        : 0.156 (+/- 0) Volts
+ Status                : Lower Non-Recoverable
+ Lower Non-Recoverable : 10.173
+ Lower Critical        : 10.299
+ Lower Non-Critical    : 10.740
+ Upper Non-Critical    : 12.945
+ Upper Critical        : 13.260
+ Upper Non-Recoverable : 13.386
+ Positive Hysteresis   : 0.063
+ Negative Hysteresis   : 0.063
+ Assertion Events      : lcr- lnr- 
+ Assertions Enabled    : lcr- lnr- ucr+ unr+ 
+ Deassertions Enabled  : lcr- lnr- ucr+ unr+ 
+'''
+def get_index_by_record(record_id):
+    get_cmd = ['ipmitool', 'sel', 'get', str(record_id)]
+    try:
+        out = str(subprocess.check_output(get_cmd))
+    except Exception as e:
+        err("failed to load ipmitool sel get command: {}".format(e))
+        return {}
+
+    tokens = out.split('Sensor ID')
+    try:
+        index = (tokens[1].split('(')[1]).split(')')[0]
+    except IndexError:
+        index = '0'
+    return (int((index), 0))
+
+'''
+Need global dictionary to keep name and index entries so
+that we do not parse the entire sensor sel record in a loop.
+'''
+name_id_dict = {}
+
+def create_sels(line):
+    line = line.split('|')
+
+    record_id = int(line[0], 16)
+
+    ts = line[1].strip() + ' ' + line[2].strip()
+    if ts is not None:
+        ts = datetime.fromtimestamp(datetime.strptime
+                (ts, "%m/%d/%Y %H:%M:%S").timestamp()).isoformat("T") + "Z"
+
+    name = line[3].split(' ')[2]
+    desc = line[4].strip()
+    event = line[5].strip()
+    try:
+        triggers = line[6].split(' ')
+        trigger_reading = triggers[2] + ' ' + triggers[6]
+        trigger_thresh = triggers[5] + ' ' + triggers[6]
+    except IndexError:
+        trigger_reading = ' '
+        trigger_thresh = ' '
+
+    '''
+    Check if name and index exists in the dictionary.
+    If not, add it.
+    '''
+    index = name_id_dict.get(name)
+    if index is None:
+        index = get_index_by_record(record_id)
+        name_id_dict.update({name:index})
+
+    fields = {'record_id':record_id,
+              'name':name,
+              'index':index,
+              'ts':ts,
+              'trigger_reading':trigger_reading,
+              'trigger_threshold':trigger_thresh,
+              'description':desc,
+              'event':event
+             }
+
+    s = SensorSEL(**fields)
+    s.prep()
+    return s
+
+'''
+Gets sensor sel record for each entry in ipmitool sel elist.
+Example of sel elist:
+   1 | 06/01/2018 | 21:43:16 | Voltage 12V | Lower Critical going low  | Asserted | Reading 0.16 < Threshold 10.30 Volts
+   2 | 06/01/2018 | 21:43:16 | Voltage 12V | Lower Non-recoverable going low  | Asserted | Reading 0.16 < Threshold 10.17 Volts
+   3 | 06/08/2018 | 00:44:44 | Voltage 12V | Lower Critical going low  | Asserted | Reading 0.16 < Threshold 10.30 Volts
+   4 | 06/08/2018 | 00:44:44 | Voltage 12V | Lower Non-recoverable going low  | Asserted | Reading 0.16 < Threshold 10.17 Volts
+'''
+def get_sel_records():
+    sels = []
+    lines = []
+    cmd = ['ipmitool', 'sel', 'elist']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to load ipmitool sel elist command: {}".format(e))
+        return {}
+
+    while(p.poll() is None):
+        line = p.stdout.readline().decode()
+        line = line.strip()
+        if len(line) > 0:
+            lines.append(line)
+
+    r = {}
+    for line in lines:
+        sel = create_sels(line)
+
+        if sel is not None:
+            sels.append(sel)
+
+    return (sels)
+
+if __name__ == "__main__":
+    if (sys.argv[1] == "sensor"):
+        sensors = []
+
+        for r in get_sensor_records():
+            sen = create_sensors(r)
+
+            if sen is not None:
+                sensors.append(sen)
+
+        jout = [ v.json_dict() for v in sensors ]
+        print(json.dumps(jout))
+
+    if (sys.argv[1] == "sel"):
+        jout = [ v.json_dict() for v in get_sel_records() ]
+        print(json.dumps({'sel':(jout)}))
+

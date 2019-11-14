@@ -1,0 +1,301 @@
+Source: vyatta-cfg-system
+Section: contrib/net
+Priority: optional
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends:
+ cpio,
+ debhelper (>= 9.20160709),
+ debhelper (>= 9.20160403~) | dh-autoreconf,
+ dh-yang,
+ libfile-slurp-perl,
+ libfile-temp-perl,
+ libnetaddr-ip-perl,
+ libtest-mockobject-perl,
+ pylint3,
+ python3-vyatta-cfgclient,
+ ronn | ruby-ronn,
+ shunit2,
+Standards-Version: 3.9.6
+
+Package: vyatta-system-journal-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: YANG root for systemd-journal config in Vyatta vRouter
+ The YANG files defining the root of the data model for systemd-journal's
+ configuration in the Vyatta Configd CLI, and the export child-node hosting
+ journal log export configuration.
+
+Package: vyatta-system-login-v1-yang
+Architecture: all
+Depends:
+ cracklib-runtime,
+ libpwquality-tools,
+ vyatta-system,
+ ${misc:Depends},
+ ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-login-v1 module
+ System login configuration. It also includes the systems minimum password
+ standards. They are based on pwquality's password restrictions.
+
+Package: vyatta-system-misc-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-misc-v1 module
+ Miscallaneous system configuration
+
+Package: vyatta-system-network-v1-yang
+Architecture: all
+Depends:
+ vyatta-dataplane-cfg-arp-0,
+ vyatta-dataplane-cfg-ip4-0,
+ vyatta-dataplane-cfg-ip6-0,
+ vyatta-interfaces (>= 1.32),
+ vyatta-system,
+ ${misc:Depends},
+ ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-network-v1 module
+ Global network parameter configuration
+
+Package: vyatta-system-network-routing-instance-v1-yang
+Architecture: all
+Depends: libnss-vrfdns, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-network-routing-instance-v1 module
+ The YANG module for vyatta-system-network-routing-instance-v1
+
+Package: vyatta-system-package-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-package-v1 module
+ Package management configuration
+
+Package: vyatta-system-syslog-v1-yang
+Architecture: all
+Depends:
+ vyatta-cfg (>= 1.16),
+ vyatta-debian-system-config (>= 1.8),
+ vyatta-system,
+ ${misc:Depends},
+ ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-syslog-v1 module
+ Syslog configuration
+
+Package: vyatta-system-syslog-routing-instance-v1-yang
+Architecture: all
+Depends:
+ libvyatta-vrfmanager-perl,
+ rsyslog-czmq,
+ systemd,
+ vyatta-system,
+ ${misc:Depends},
+ ${yang:Depends}
+Description: vyatta-system-syslog-routing-instance-v1 module
+ Syslog VRF configuration
+
+Package: vyatta-system
+Architecture: any
+Depends:
+ adduser,
+ apt-transport-https,
+ at,
+ bash-completion,
+ busybox,
+ console-setup,
+ console-terminus,
+ cron,
+ debsums,
+ dmidecode,
+ grub-common,
+ host,
+ ipmitool,
+ iproute,
+ iputils-arping,
+ isc-dhcp-client,
+ kbd (>= 1.12-14),
+ less,
+ libconfig-inifiles-perl,
+ libfile-slurp-perl,
+ libio-prompt-perl,
+ libipc-system-simple-perl,
+ libnetaddr-ip-perl,
+ libpam-runtime (>= 1.0.1-5),
+ libparse-syslog-perl,
+ libswitch-perl,
+ libsys-hostname-long-perl,
+ libsys-syslog-perl,
+ libtemplate-perl,
+ libtime-duration-perl,
+ libvyatta-cfgclient-perl,
+ libxml-bare-perl,
+ lm-sensors,
+ lsof,
+ mgetty,
+ pciutils,
+ procps (>= 1:3.2.7-3),
+ python3,
+ radvd,
+ rsyslog | system-log-daemon,
+ sudo,
+ systemd,
+ systemd-journal-remote,
+ util-linux (>= 2.20.1-5),
+ vyatta-bash,
+ vyatta-cfg,
+ vyatta-debian-pam-configs-config,
+ vyatta-debian-passwd-config,
+ vyatta-debian-system-config,
+ vyatta-debian-systemd-config,
+ vyatta-ipmi,
+ vyatta-opd,
+ vyatta-util (>= 0.16),
+ whois,
+ wireshark-common,
+ yang-utils,
+ ${misc:Depends},
+ ${perl:Depends},
+ ${shlibs:Depends}
+Breaks:
+ vyatta-cfg-system (<< 1.6.0),
+ vyatta-op (<< 1.0),
+ vyatta-service-ntp (<< 0.3),
+ vyatta-service-snmp (<< 0.5.1),
+ vyatta-service-telnet (<< 1.3),
+ vyatta-sssd-cfg (<< 0.38),
+ vyatta-vrrp (<< 1.1.5)
+Replaces: vyatta-cfg-system (<< 1.6.0), vyatta-op (<< 1.0)
+Provides: libvyatta-file-perl, libvyatta-ioctl-perl, libvyatta-login-perl
+Description: System command helper scripts
+ Scripts to help with all system management functions aligned
+ with RFC 7317 (ietf-system)
+
+Package: vyatta-cfg-system
+Architecture: any
+Depends:
+ vyatta-interfaces-erspan-v1-yang,
+ vyatta-interfaces-loopback-v1-yang,
+ vyatta-interfaces-tunnel-v1-yang,
+ vyatta-interfaces-vti-v1-yang,
+ vyatta-security-ssh-known-hosts-v1-yang,
+ vyatta-service-dns-v1-yang,
+ vyatta-service-snmp-v1-yang,
+ vyatta-service-ssh,
+ vyatta-service-ssh-v1-yang,
+ vyatta-service-telnet-v1-yang,
+ vyatta-system-login-v1-yang,
+ vyatta-system-misc-v1-yang,
+ vyatta-system-network-v1-yang,
+ vyatta-system-package-v1-yang,
+ vyatta-system-syslog-v1-yang,
+ vyatta-system-time-v1-yang,
+ ${misc:Depends},
+ ${perl:Depends},
+ ${shlibs:Depends}
+Suggests: dialog, ncurses-bin (>= 5.5-5)
+Description: Vyatta system-level configuration (meta-package)
+ Vyatta system-level configuration utiliites, templates and scripts.
+
+Package: vyatta-system-login-radius-routing-instance-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-login-radius-routing-instance-v1 module
+ The YANG module for vyatta-system-login-radius-routing-instance-v1
+
+Package: vyatta-op-show-log-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-log-v1 module
+ The YANG module for show log operational commands
+
+Package: vyatta-op-show-hardware-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-hardware-v1 module
+ The YANG module for show hardware operational commands
+
+Package: vyatta-op-reset-system-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-reset-system-v1 module
+ The YANG module for reset system operational commands
+
+Package: vyatta-op-show-system-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-v1 module
+ The YANG module for show system operational commands
+
+Package: vyatta-system-platform-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-platform-v1 module
+ The YANG module for platform configuration parameters
+
+Package: vyatta-system-platform-deviation-danos-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-platform-deviation-danos-v1 module
+ The YANG module for DANOS platform deviations
+
+Package: vyatta-system-sensor-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-sensor-v1 module
+ The YANG module for retrieving platform sensors information
+
+Package: vyatta-op-show-platform-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-platform-v1 module
+ The YANG module for show platform operational commands
+
+Package: vyatta-op-show-hardware-cpu-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-hardware-cpu-v1 module
+ The YANG module for show hardware cpu operational commands
+
+Package: vyatta-op-show-security-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-security-v1 module
+ The YANG module for show security operational commands
+
+Package: vyatta-op-clear-security-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-clear-security-v1 module
+ The YANG module for clear security operational commands
+
+Package: vyatta-system-hardware-cpu-history-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-hardware-cpu-history-v1 module
+ The YANG module for retrieving CPU utilization information
+
+Package: vyatta-radius-system-user-login-feature
+Architecture: all
+Depends:
+ ${misc:Depends},
+ vyatta-cfg-system (>= ${source:Version}),
+ libpam-radius-auth
+Breaks: vyatta-cfg-system (<< 2.20)
+Replaces: vyatta-cfg-system (<< 2.20)
+Section: contrib/net
+Priority: optional
+Description: Vyatta RADIUS system-user login feature flag
+ The feature flag for RADIUS system-user login feature
+
+Package: vyatta-system-fru-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-fru-v1 module
+ The YANG module for retrieving field-replaceable unit (FRU) information

@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2007-2017, Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+: "${vyatta_env:=/etc/default/vyatta}"
+source "$vyatta_env"
+declare -x BOOTFILE="$vyatta_sysconfdir/config/config.boot"
+
+# Vyatta config file and other relevant files
+CONF_JOB_FILE="$vyatta_sysconfdir/config/confirm.job"
+COMMITS_FILE=/config/archive/commits
+ARCHIVED_FILE_PREFIX=/config/archive/config.boot
+
+# Tools required by this script
+vyatta_commit_revs=/opt/vyatta/sbin/vyatta-commit-revs.pl
+
+restore_version() {
+	#
+	# Extract config from archived file and replace boot config
+	#
+	version=$1
+	restore_file="$ARCHIVED_FILE_PREFIX.$version"
+	if [ ! -f $restore_file.gz ]; then
+		echo "Unable to locate archived config."
+		echo "Configuration will not be restored."
+		return
+	fi
+
+	#
+	# Keep .gz file, and overwrite any existing extracted file (not that there
+	# should be one).
+	#
+	gunzip -f -k $restore_file.gz
+	if [ ! -f $restore_file ]; then
+		echo "Unable to extract archived config."
+		echo "Configuration will not be restored."
+		return
+	fi
+	mv $restore_file $BOOTFILE
+
+	#
+	# Get timestamp of commit we are restoring to add to commit message and
+	# convert to pretty-print format
+	#
+	let line=$version+1
+	commit_ts=$(head -n $line $COMMITS_FILE | tail -n 1 | cut -d'|' -f2)
+	pretty_ts=$(date --date="@$commit_ts" '+%Y-%m-%d %H:%M:%S')
+
+	#
+	# Call vyatta-commit-revs.pl with GRUB option.  This will copy the boot
+	# config (/config/config.boot) into the archive directory and update the
+	# commits file with the appropriate comment, using the ENV vars set below.
+	#
+	export COMMIT_COMMENT="Restored '$pretty_ts' commit following reboot"
+	export COMMIT_USER="root"
+	export COMMIT_STATUS=""
+	export COMMIT_VIA="init"
+
+	$vyatta_commit_revs --unconf_reboot
+
+	echo "Restored previous config version"
+}
+
+
+# Set config file up correctly:
+#
+#  - if we rebooted while a commit-confirm was pending, we need to
+#    rollback
+#  - if BOOTFILE is not readable, replace it with the default config if
+#    that exists.
+#  - failing that, use vyatta_current_conf_ver.pl to generate minimal
+#    config file.
+#
+init_bootfile () {
+	if [ -r "$CONF_JOB_FILE" ]; then
+		echo "Rollback for unconfirmed commit-confirm in progress ..."
+		job=`tail -n 1 $CONF_JOB_FILE`
+		atrm $job 2> /dev/null
+		rm -f $CONF_JOB_FILE
+		restore_version 1
+	fi
+	if [ ! -r "$BOOTFILE" ] ; then
+		if [ -f "$vyatta_sysconfdir/config.boot.default" ]; then
+			echo "Replacing bootfile with default bootfile"
+			cp "$vyatta_sysconfdir/config.boot.default" "$BOOTFILE"
+        else
+			echo "No config found.  Generating version info"
+			"$vyatta_sbindir/vyatta_current_conf_ver.pl" > "$BOOTFILE"
+        fi
+
+		chgrp vyattacfg "$BOOTFILE"
+		chmod 660 "$BOOTFILE"
+    fi
+}
+
+init_bootfile

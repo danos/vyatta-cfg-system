@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -f /run/motd.vyatta ] ; then
+    cat /run/motd.vyatta
+else
+    DESC=$(/opt/vyatta/bin/vyatta-show-version |
+	sed -n 's/^Description:\s*\([^0-9]\+\).*/\1/p')
+
+    echo "Welcome to ${DESC:-Brocade Vyatta Network OS}"
+    /opt/vyatta/bin/vyatta-show-version | head -2
+fi

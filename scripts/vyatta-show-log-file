@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+use strict;
+use warnings;
+
+use File::Spec::Functions;
+
+sub show_log_file {
+    my ( $log_dir, $filename ) = @_;
+
+    my $found = 0;
+    my @files = reverse glob "$log_dir/$filename";
+    while (@files) {
+        my $fname = shift(@files);
+        if ( ! -f $fname ) {
+            next;
+        }
+        my $cmd = "cat";
+        if ( $fname =~ /.gz/ ) {
+           $cmd = "zcat";
+        }
+        system("$cmd $fname");
+        $found = 1;
+    }
+
+    if ( not $found ) {
+        die "File $filename does not exist in $log_dir.\n";
+    } else {
+        return 0;
+    }
+}
+
+my $filename = $ARGV[0];
+my $log_dir = $ARGV[1];
+
+if ($filename =~ "/") {
+    die "File $filename does not exist in $log_dir.\n";
+}
+
+show_log_file( $log_dir, $filename );
+

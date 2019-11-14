@@ -1,0 +1,11 @@
+#
+# Vyatta modifications to sudo configuration
+#
+Defaults syslog_goodpri=info
+Defaults env_keep+=VYATTA_*
+Defaults !mail_no_user
+Defaults !mail_badpass
+Defaults lecture=never
+
+# Allow members of group vyattasu to execute any command
+%vyattasu ALL= ALL

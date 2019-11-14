@@ -1,0 +1,17 @@
+[Unit]
+Description=Prepare for system configuration
+DefaultDependencies=no
+After=local-fs.target
+Requires=local-fs.target
+Before=clear-system-config.service sysinit.target vyatta-pre-boot.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/system-preconfigure
+StandardOutput=syslog
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=sysinit.target clear-system-config.service vyatta-pre-boot.target
+Alias=rl-system.service

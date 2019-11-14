@@ -1,0 +1,3 @@
+help: Set to use default pager (less)
+local: true
+run:  VYATTA_PAGER=$_vyatta_default_pager

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = configure ] ; then
+    [ ! -L /etc/motd ] && ln -fs /run/motd /etc/motd
+fi
+
+#DEBHELPER#
+
+exit 0

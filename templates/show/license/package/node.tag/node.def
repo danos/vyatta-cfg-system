@@ -1,0 +1,3 @@
+help: Package Name
+allowed: ${vyatta_bindir}/vyatta-show-licenses.pl --list-packages
+run: ${vyatta_bindir}/vyatta-show-licenses.pl --print-pkg ${@:4}

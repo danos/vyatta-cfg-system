@@ -1,0 +1,373 @@
+module vyatta-system-sensor-v1 {
+    namespace "urn:vyatta.com:mgmt:vyatta-system-sensor:1";
+    prefix vyatta-system-sensor-v1;
+
+    import ietf-yang-types {
+        prefix ietf;
+    }
+    import vyatta-system-v1 {
+        prefix system;
+    }
+    import configd-v1 {
+        prefix configd;
+    }
+
+    organization "AT&T Inc.";
+    contact
+        "AT&T
+         Postal: 208 S. Akard Street
+                 Dallas, TX 75202
+         Web: www.att.com";
+
+    description
+        "Copyright (c) 2018-2019, AT&T Intellectual Property.
+         All rights reserved.
+
+        Copyright (c) 2018 IETF Trust and the persons identified as the
+        document authors.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or without
+        modification, is permitted pursuant to, and subject to the license
+        terms contained in, the Simplified BSD License set forth in Section
+        4.c of the IETF Trusts Legal Provisions Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is derived from IETF Draft
+        draft-ietf-netmod-entity-08";
+
+    revision 2019-03-01 {
+        description "Add new sensor-status notapplicable.";
+    }
+
+    revision 2019-02-17 {
+        description "Add new container sensors for sensor configuration.";
+    }
+
+    revision 2019-01-17 {
+        description "Add system-event-logs RPC.";
+    }
+
+    revision 2018-07-03 {
+        description "Support sensor thresholds and system event logs(sels).";
+    }
+
+    revision 2018-03-03 {
+        description "Initial revision of version 1.";
+    }
+
+    typedef sensor-value {
+        description
+            "A node using this data type represents a sensor value.
+
+            A node of this type SHOULD be defined together with nodes of
+            type sensor-value-type, sensor-value-scale, and
+            sensor-value-precision.  Together, associated nodes of those
+            three types are used to identify the semantics of a node of
+            this data type.
+
+            The semantics of a node using this data type are determined by
+            the value of the associated sensor-value-type node";
+        type int32 {
+            range "-1000000000 .. 1000000000";
+        }
+    }
+
+    typedef sensor-value-type {
+        description
+            "A node using this data type represents the sensor measurement
+            data type associated with a physical sensor value. The actual
+            data units are determined by examining a node of this type
+            together with the associated sensor-value-scale node.
+
+            A node of this type SHOULD be defined together with nodes of
+            type sensor-value-scale and sensor-value-precision. These
+            three types are used to identify the semantics of a node of
+            type sensor-value.";
+
+        type enumeration {
+            enum volts {
+                description "A measure of electric potential";
+            }
+            enum celsius {
+                description "A measure of temperature";
+            }
+            enum rpm {
+                description "A measure of shaft revolutions per minute.";
+            }
+            enum other {
+                description "A measure other than those listed above.";
+            }
+        }
+    }
+
+    typedef sensor-value-scale {
+        description
+            "A node using this data type represents a data scaling factor,
+            represented with an International System of Units (SI) prefix.
+            The actual data units are determined by examining a node of
+            this type together with the associated sensor-value-type.
+
+            A node of this type SHOULD be defined together with nodes of
+            type sensor-value-type and sensor-value-precision.  Together,
+            associated nodes of these three types are used to identify the
+            semantics of a node of type sensor-value.";
+
+        type enumeration {
+            enum milli {
+                description "Data scaling factor of 10^-3.";
+            }
+            enum units {
+                description "Data scaling factor of 10^0.";
+            }
+            enum kilo {
+                description "Data scaling factor of 10^3.";
+            }
+            enum mega {
+                description "Data scaling factor of 10^6.";
+            }
+       }
+     }
+
+    typedef sensor-value-precision {
+        description
+            "A node using this data type represents a sensor value
+            precision range.
+
+            A node of this type SHOULD be defined together with nodes of
+            type sensor-value-type and sensor-value-scale.  Together,
+            associated nodes of these three types are used to identify the
+            semantics of a node of type sensor-value.
+
+            If a node of this type contains a value in the range 1 to 9,
+            it represents the number of decimal places in the fractional
+            part of an associated sensor-value fixed- point number.
+
+            If a node of this type contains a value in the range -8 to -1,
+            it represents the number of accurate digits in the associated
+            sensor-value fixed-point number.
+
+            The value zero indicates the associated sensor-value node is
+            not a fixed-point number";
+        type int8 {
+            range "-8 .. 9";
+        }
+    }
+
+    typedef sensor-status {
+        description "Represents the operational status of the sensor";
+        type enumeration {
+            enum ok {
+                description "Indicates that the sensor value can be obtained";
+            }
+            enum unavailable {
+                description "Indicates that the sensor value cannot be obtained";
+            }
+            enum nonoperational {
+                description
+                    "Indicates that the sensor might be broken.
+                The sensor could have a hard failure (disconnected wire),
+                or a soft failure such as out-of-range, jittery, or wildly
+                fluctuating readings.";
+            }
+            enum notapplicable {
+                description
+                     "Indicates that a sensor value is not applicable for this
+                sensor type";
+            }
+        }
+    }
+
+    typedef sensor-threshold {
+        description "Sensor threshold type";
+        type decimal64 {
+            fraction-digits 2;
+            range -100000..100000;
+        }
+    }
+
+    grouping sensor-thresholds {
+        leaf upper-non-recoverable {
+            description "Upper non-recoverable sensor threshold value";
+            configd:help "Upper non-recoverable sensor threshold value";
+            type sensor-threshold;
+        }
+        leaf upper-critical {
+            description "Upper critical sensor threshold value";
+            configd:help "Upper critical sensor threshold value";
+            type sensor-threshold;
+        }
+        leaf upper-non-critical {
+            description "Upper non-critical sensor threshold value";
+            configd:help "Upper non-critical sensor threshold value";
+            type sensor-threshold;
+        }
+
+        leaf lower-non-recoverable {
+            description "Lower non-recoverable sensor threshold value";
+            configd:help "Lower non-recoverable sensor threshold value";
+            type sensor-threshold;
+        }
+        leaf lower-critical {
+            description "Lower critical sensor threshold value";
+            configd:help "Lower critical sensor threshold value";
+            type sensor-threshold;
+        }
+        leaf lower-non-critical {
+            description "Lower non-critical sensor threshold value";
+            configd:help "Lower non-critical sensor threshold value";
+            type sensor-threshold;
+        }
+    }
+
+    grouping hardware-sensor-list {
+        list sensor {
+            description "List of sensors on the system";
+            configd:get-state "/opt/vyatta/bin/yangop-get-sensor sensor";
+            key "name";
+            leaf name {
+                description "Name of sensor";
+                type string;
+            }
+            leaf id {
+                description "Index for the sensor";
+                type uint32 {
+                    range 0..2147483647;
+                }
+            }
+            leaf value {
+                description "The most recent measurement of the sensor";
+                type sensor-value;
+            }
+            leaf value-type {
+                description "The type of data units associated with the sensor value";
+                type sensor-value-type;
+            }
+            leaf value-scale {
+                description
+                    "The (power of 10) scaling factor associated
+                    with the sensor value";
+                type sensor-value-scale;
+            }
+            leaf value-precision {
+                description
+                    "The number of decimal places of precision
+                    associated with the sensor value";
+                type sensor-value-precision;
+            }
+            leaf oper-status {
+                description "The operational status of the sensor";
+                type sensor-status;
+            }
+            leaf units-display {
+                description
+                    "A textual description of the data units that should be
+                    used in the display of the sensor value.";
+                type string;
+            }
+            leaf value-timestamp {
+                description
+                    "The time the status and/or value of this sensor was last
+                    obtained";
+                type ietf:date-and-time;
+            }
+            leaf value-update-rate {
+                description
+                    "The frequency between polling updates for the sensor.
+                    The value zero indicates:
+
+                    - the sensor value is updated on demand (e.g.,
+                    when polled for a get-request),
+                    - the sensor value is updated when the sensor
+                    value changes (event-driven)";
+                type uint32 {
+                    range 0..2147483647;
+                }
+            }
+            uses sensor-thresholds;
+        }
+    }
+
+    grouping hardware-sensor {
+        container hardware {
+            description "Sensor information for the system";
+            config false;
+            uses hardware-sensor-list;
+        }
+    }
+
+    augment /system:system {
+        uses hardware-sensor;
+        container sensors {
+            description "Sensors configuration";
+            configd:help "Sensors configuration";
+            configd:end "vyatta-conf-sensors threshold";
+            list sensor {
+                description "Sensor parameters";
+                configd:help "Sensor name";
+                configd:allowed "vyatta-conf-sensors show-sensor-names";
+                must "count(threshold/*) > 0" {
+                    error-message "At least one threshold type must be specified for the sensor";
+                }
+                key "name";
+                leaf name {
+                    description "Sensor name";
+                    configd:help "Sensor name";
+                    type string;
+                }
+                container threshold {
+                    description "Sensor threshold parameters";
+                    configd:help "Sensor threshold parameters";
+                    uses sensor-thresholds;
+                }
+            }
+        }
+    }
+
+    rpc system-event-logs {
+        description "Get the sensor system event logs";
+        configd:call-rpc 'yangop-get-sensor sel';
+
+        output {
+            list sel {
+                description "List of sensor system event logs";
+                key "record-id";
+                leaf record-id {
+                    description "Record ID for the sel entry";
+                    type uint32 {
+                        range 0..2147483647;
+                    }
+                }
+                leaf name {
+                    description "Name of sensor";
+                    type string;
+                }
+                leaf id {
+                    description "Index for the sensor";
+                    type uint32 {
+                        range 0..2147483647;
+                    }
+                }
+                leaf timestamp {
+                    description "The timestamp when the sel event occurred";
+                    type ietf:date-and-time;
+                }
+                leaf trigger-reading {
+                    description "The value of sensor that triggered the event";
+                    type string;
+                }
+                leaf trigger-threshold {
+                    description "The threshold value of the sensor";
+                    type string;
+                }
+                leaf description {
+                    description "Description of the sel event that occurred.";
+                    type string;
+                }
+                leaf event {
+                    description "Details of the sel event that occurred";
+                    type string;
+                }
+            }
+        }
+    }
+}

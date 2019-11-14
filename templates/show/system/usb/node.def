@@ -1,0 +1,2 @@
+help: Show peripherals connected to the USB bus
+run: lsusb 2> /dev/null || echo 'No USB devices found.'

@@ -1,0 +1,11 @@
+#!/bin/bash
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Start a tail and pipe it to the parser.
+#
+journalctl -a -f | "${vyatta_bindir}/vyatta-monitor-parse.pl" "$@"

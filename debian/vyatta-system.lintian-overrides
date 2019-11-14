@@ -1,0 +1,8 @@
+vyatta-system: file-in-unusual-dir opt/vyatta/share/tmplscripts/*
+vyatta-system: dir-or-file-in-opt
+vyatta-system: changelog-file-missing-in-native-package
+vyatta-system: unusual-interpreter etc/dhcp/dhclient.script #!/bin/vcli
+vyatta-system: unusual-interpreter opt/vyatta/share/tmplscripts/*
+vyatta-system: non-standard-dir-in-var var/core/
+vyatta-system: depends-on-obsolete-package depends: vyatta-bash
+vyatta-system: systemd-service-file-refers-to-unusual-wantedby-target

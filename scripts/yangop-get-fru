@@ -1,0 +1,210 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+from datetime import datetime
+import time
+import enum
+import json
+import re
+import subprocess
+import sys
+import os
+
+def err(msg):
+    print(msg, file=sys.stderr)
+
+# Parses input string into FRU name and ID
+# Input example : Builtin FRU Device (ID 0)
+# Output example :
+#     fru_name : 'Builtin FRU Device'
+#     id : 0
+def get_fru_name_and_id(value):
+    if value is not None:
+        l = value.split(' (')
+        id = l[1].split(')')
+        return { 'fru_name': l[0], 'id' : int(id[0].split(' ')[1]) }
+
+def get_board_mfg_date(x):
+    return { 'board_mfg_date': x }
+
+def get_board_mfg(x):
+    return { 'board_mfg': x }
+
+def get_board_product_name(x):
+    return { 'board_product_name': x }
+
+def get_board_serial_num(x):
+    return { 'board_serial_num': x }
+
+def get_board_part_num(x):
+    return { 'board_part_num': x }
+
+def get_product_mfg(x):
+    return { 'product_mfg': x }
+
+def get_product_name(x):
+    return { 'product_name': x }
+
+def get_product_part_num(x):
+    return { 'product_part_num': x }
+
+def get_product_version(x):
+    return { 'product_version': x }
+
+def get_product_serial_num(x):
+    return { 'product_serial_num': x }
+
+def get_product_asset_tag(x):
+    return { 'product_asset_tag': x }
+
+def get_product_extra(x):
+    return { 'product_extra': x }
+
+ipmi_tool_key = {
+    'FRU Device Description' : get_fru_name_and_id,
+    'Board Mfg Date' : get_board_mfg_date,
+    'Board Mfg' : get_board_mfg,
+    'Board Product' : get_board_product_name,
+    'Board Serial' : get_board_serial_num,
+    'Board Part Number' : get_board_part_num,
+    'Product Manufacturer' : get_product_mfg,
+    'Product Name' : get_product_name,
+    'Product Part Number' : get_product_part_num,
+    'Product Version' : get_product_version,
+    'Product Serial' : get_product_serial_num,
+    'Product Asset Tag' : get_product_asset_tag,
+    'Product Extra' : get_product_extra
+    }
+
+def create_frus(d):
+    fields = {}
+    for k,v in ipmi_tool_key.items():
+        fields.update(v(d.get(k)))
+
+    f = Fru(**fields)
+    return f
+   
+class Fru:
+    """
+    Fru Class. Contains a single fru record.
+    """
+    _attrs = {
+        'fru_name': 'fru-name',
+        'id': 'id',
+        'board_mfg_date': 'board-manufacture-date',
+        'board_mfg':  'board-manufacturer',
+        'board_product_name': 'board-product-name',
+        'board_serial_num': 'board-serial-number',
+        'board_part_num': 'board-part-number',
+        'product_mfg': 'product-manufacturer',
+        'product_name': 'product-name',
+        'product_part_num': 'product-part-number',
+        'product_version': 'product-version',
+        'product_serial_num': 'product-serial-number',
+        'product_asset_tag': 'product-asset-tag',
+        'product_extra': 'product-extra',
+    }
+
+    def __init__(self, **kwargs):
+        [self.__setattr__(k, kwargs.get(k)) for k in self._attrs.keys()]
+        if self.fru_name is None:
+            if self.id > 0:
+                self.fru_name = str(self.id)
+            else:
+                raise ValueError
+
+    def prep(self):
+        if self.fru_name is None:
+            if self.id is None:
+                raise ValueError
+            else:
+                self.fru_name = "Fru#{}".format(self.id)
+        for attr in self._attrs.keys():
+            v = getattr(self, attr)
+            if v is None:
+                setattr(self, attr, 'unavailable')
+
+    def json_dict(self):
+        self.prep()
+        return {self._attrs[k]: v for (k,v) in self.__dict__.items()}
+
+    def __str__(self):
+        return "Frus({})".format(str(self.__dict__))
+
+    def __repr__(self):
+        return "Frus({})".format(repr(self.__dict__))
+
+'''
+Reads and stores FRU data record.
+Example:
+FRU Device Description : Builtin FRU Device (ID 0)
+ Board Mfg Date        : Mon Sep 17 13:34:00 2018
+ Board Mfg             : UFISPACE
+ Board Product         : S9500-30XS-Board
+ Board Serial          : WB2N8380009
+ Board Part Number     : WB3N838000R
+ Product Manufacturer  : UFISPACE
+ Product Name          : S9500-30XS
+ Product Part Number   : WB4N838000T
+ Product Version       : PVT
+ Product Serial        : WCF1897B00003-P1
+ Product Asset Tag     : 00
+
+FRU Device Description : PSU0_FRU (ID 1)
+ Product Manufacturer  : FSPGROUP
+ Product Name          : VICTO451DM
+ Product Part Number   : YNEB0450
+ Product Version       : AM-2R01N01 
+ Product Serial        : S0A020Y311816000111
+ Product Extra         : P3H800A01
+ Product Extra         : A
+
+FRU Device Description : PSU1_FRU (ID 2)
+ Product Manufacturer  : FSPGROUP
+ Product Name          : VICTO451DM
+ Product Part Number   : YNEB0450
+ Product Version       : AM-2R01N01 
+ Product Serial        : S0A020Y311816000108
+ Product Extra         : P3H800A01
+ Product Extra         : A
+'''
+def get_fru_records():
+    cmd = ['ipmitool', 'fru']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("failed to load ipmitool command: {}".format(e))
+        return {}
+
+    r = {}
+    while True:
+        line = p.stdout.readline().decode()
+        if len(line) == 0 and p.poll() is not None:
+            break;
+        line = line.strip()
+        if len(line) > 0:
+            try:
+                k,v = line.split(':', 2)
+                r[k.strip()] = v.strip()
+            except:
+                pass
+        elif len(r) > 0:
+            yield r
+            r = {}
+
+if __name__ == "__main__":
+    if (sys.argv[1] == "fru"):
+        frus = []
+
+        for r in get_fru_records():
+            fru = create_frus(r)
+
+            if fru is not None:
+                frus.append(fru)
+
+        jout = [ v.json_dict() for v in frus ]
+        print(json.dumps(jout))

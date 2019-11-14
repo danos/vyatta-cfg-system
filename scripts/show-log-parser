@@ -1,0 +1,84 @@
+#!/usr/bin/perl -w
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+use strict;
+use English;
+use Getopt::Long;
+use Pod::Usage;
+use IO::Pipe;
+
+my $opt_debug = 0;
+
+my $options_okay = GetOptions (
+  'debug' => \$opt_debug,
+
+  # Standard options
+  'version' => sub { print STDOUT "0.1\n"; exit(0); },
+  'help' => sub { pod2usage( -exitval => 0 ); },
+);
+
+pod2usage( -exitval => 1 ) if !$options_okay;
+
+my @entries;
+
+# sort input files by their mtime timestamp
+my @files = map { $_->[0] }
+  sort { $a->[1] <=> $b->[1] }
+  map { [ $_, -M $_ ] } @ARGV;
+
+while (@files) {
+  my $filename = shift(@files);
+
+  if ($opt_debug) {
+    print STDERR "Processing syslog file: " . $filename . "\n";
+  }
+
+  # select cat or zcat depending on if it is compressed
+  my $pipe = IO::Pipe->new();
+  if ($filename =~ /\.gz$/i) {
+    $pipe->reader("zcat $filename");
+  }
+  else {
+    $pipe->reader("cat $filename");
+  }
+  
+  # add log entries to array
+  push (@entries, (<$pipe>));
+
+}
+
+#print array sorted on the timestamp field (up to first blank)
+print sort { (split / /, $a)[0] cmp (split / /, $b)[0] } @entries;
+
+
+__END__
+
+=head1 NAME
+
+show-log-parser
+
+=head1 SYNOPSIS
+
+show-log-parser [--help] [file ...]
+
+=head1 OPTIONS
+
+=over
+
+=item B<--help>
+
+Display help text.
+
+=back
+
+=head1 DESCRIPTION
+
+This program will read the given rsyslog files and output their contents as one
+in chronological order.
+
+=cut

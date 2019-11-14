@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# **** License ****
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+# **** End License ****
+#
+# A preconfig.d script that runs a boot time to determine the HWADDR of the
+# boot interface in use. This is used by postconfig.d/vyatta-bootif-dhcp to
+# enable the DHCP client on the matching dataplane interface.
+#
+
+. /lib/lsb/init-functions
+
+for device in /sys/class/net/* ; do
+    dev=${device##*/}
+    [ "$dev" == "lo" ] && continue
+
+    if [ -e "/run/net-${dev}.conf" ]; then
+        HWADDR=$(cat "/sys/class/net/${dev}/address")
+	echo "HWADDR=${HWADDR}" >> "/run/net-${dev}.conf"
+    fi
+done

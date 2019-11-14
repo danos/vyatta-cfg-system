@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+echo "=== Running vyatta-platform-setup ==="
+
+# Learn the platform identification and invoke the platform-setup command
+# to setup the platfrom specific Yang files and features
+#
+
+platform=`/opt/vyatta/bin/vyatta-platform-util --what-am-i`
+
+/usr/bin/platform-setup -platformid $platform

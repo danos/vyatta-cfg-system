@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+# Module: vyatta-update-arp-params
+#
+# **** License ****
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2009 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Author: Mohit Mehta
+# Date: February 2009
+# Description: Update [ARP (IPv4)|Neighbor (IPV6)] Parameters
+#
+# **** End License ****
+#
+
+#
+# subroutines
+#
+
+print_usage()
+{
+    echo "Usage:"
+    echo -e "\t$0 update <type of arp paramter> <value of arp paramter> <ipv4/ipv6>"
+}
+
+set_table_thresholds() {
+    local ip_type=$1
+    local arp_value=$2
+    local softmax=$((arp_value / 2));
+    local min=$((arp_value / 8));
+    sysctl -q "net.$ip_type.neigh.default.gc_thresh3=$arp_value"
+    sysctl -q "net.$ip_type.neigh.default.gc_thresh2=$softmax"
+    sysctl -q "net.$ip_type.neigh.default.gc_thresh1=$min"
+}
+
+update_arp_param ()
+{
+ local arp_type=$1
+ local arp_value=$2
+ local ip_type=$3
+ case "$arp_type" in
+
+     table-size)
+        set_table_thresholds "$ip_type" "$arp_value"
+        ;;
+
+     *)
+         echo "Invalid arp parameter $arp_type to update"
+        ;;
+ esac
+}
+
+#
+# main
+#
+
+case "$1" in
+    update)
+        if [ $# -ne 4 ]; then
+                print_usage
+                exit 1
+        fi
+        update_arp_param "$2" "$3" "$4"
+        ;;
+
+    *)
+        print_usage
+        exit 1
+        ;;
+
+esac
+
+exit 0
+
+# end of file

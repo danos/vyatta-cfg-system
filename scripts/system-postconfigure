@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2016, Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+: "${vyatta_env:=/etc/default/vyatta}"
+source "$vyatta_env"
+
+declare -r POSTCONFIG="${vyatta_sysconfdir}/config/scripts/vyatta-postconfig-bootup.script"
+
+declare -r SYSPOSTCONFIG="${vyatta_prefix}/postconfig.d"
+
+[ -x "$SYSPOSTCONFIG" ] && ( run-parts --verbose "$SYSPOSTCONFIG" )
+
+# run the user's postconfig script after the image provided scripts
+[ -r "$POSTCONFIG" ] && . "$POSTCONFIG" || true

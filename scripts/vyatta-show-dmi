@@ -1,0 +1,21 @@
+#!/bin/bash
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014, 2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+if [ ! -d /sys/class/dmi ]; then
+	echo "DMI information not available"
+	exit 1
+fi
+
+for var in /sys/class/dmi/id/*
+do
+   tag=$(basename "$var")
+   if [ -f "$var" -a -r "$var" -a "$tag" != "uevent" -a "$tag" != "modalias" ]; then
+	echo -n "$tag: "
+	cat "$var"
+   fi
+done

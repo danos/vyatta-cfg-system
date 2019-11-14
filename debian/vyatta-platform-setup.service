@@ -1,0 +1,17 @@
+[Unit]
+Description=Set-up platform dependent Yang and Features
+Before=shutdown.target sysinit.target vyatta-pre-boot.target
+After=system-preconfigure.service
+Wants=system-preconfigure.service
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vyatta/sbin/vyatta-platform-setup
+StandardOutput=syslog
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=sysinit.target vyatta-pre-boot.target
+WantedBy=vyatta-pre-boot.target
