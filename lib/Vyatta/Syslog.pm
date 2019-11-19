@@ -231,6 +231,8 @@ sub add_override_facility_targets {
     my ( $config, $host, $facility_override ) = @_;
 
     # Needed for print_templates
+    $facility_override = $facmap{$facility_override}
+      if ( $facmap{$facility_override} );
     $fac_override{$host} = $facility_override;
 
     my $facilitylist = get_node( $config, 'facility' );
