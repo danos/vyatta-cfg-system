@@ -1,2 +1,0 @@
-help: Show contents of all master log files
-run: vyatta_cat_all_messages 

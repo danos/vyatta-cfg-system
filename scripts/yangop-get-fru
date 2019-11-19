@@ -192,8 +192,20 @@ def get_fru_records():
                 r[k.strip()] = v.strip()
             except:
                 pass
-        elif len(r) > 0:
+        elif len(r) > 1:
             yield r
+            r = {}
+        elif len(r) == 1:
+            #
+            # Some BIOSs appear to not have any FRU records.
+            # When this happens, ipmitool emits:
+            #
+            # FRU Device Description : Builtin FRU Device (ID 0)
+            #
+            # For all practical purposes, reporting this is pointless
+            # since it doesn't have any useful information.
+            # Skip/ignore records that are one dictionary element long.
+            #
             r = {}
 
 if __name__ == "__main__":

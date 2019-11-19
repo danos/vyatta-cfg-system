@@ -60,6 +60,18 @@ module vyatta-system-platform-deviation-danos-v1 {
 		description "Initial revision.";
 	}
 
+	typedef platform-type-danos {
+		type enumeration {
+			enum "switch" {
+				configd:help "Switch interfaces enslaved to hardware switches by default.";
+				description
+					"The platform is configured as a switch. Interfaces
+                     belonging to a hardware switch are automatically enslaved
+                     to the appropriate switch by default";
+			}
+		}
+	}
+
 	deviation /system:system/platf:platform/platf:type {
 		description
 			"DANOS only supports the switch platform type.";

@@ -24,42 +24,41 @@ class Client():
 
    def run(self):
       print #Newline for formatting
-      jout = {} #Dictionary that later gets turned into a json object
       elements = []
+      seen_intervals = set()
       for interval in self._data():
-        curInterval = {}
-        for key in interval:
-          if(key == 'interval'):
-            curInterval[key] = int(interval[key])
-          else:
-            curInterval[key] = '%.2f'%(interval[key])
-        elements.append(curInterval)
-      jout['cpu-data'] = elements
+         # filter out repeated intervals when uptime is < 60 minutes
+         interval_id = int(interval.pop('interval'))
+         if interval_id in seen_intervals:
+            continue
+         seen_intervals.add(interval_id)
+
+         curInterval = {}
+         curInterval['interval'] = interval_id
+         # pretty-print the percentages
+         for key in interval:
+            curInterval[key] = '%05.2f'%(interval[key])
+         elements.append(curInterval)
+
       #If "show" is passed then the data will be displayed in table format
       if(len(sys.argv) == 2 and sys.argv[1] == "show"):
-        print("Interval    %user    %nice    %system",
-        	"    %iowait    %steal    %idle")
-        print("-------------------------------------",
-        	"------------------------------")
+        print("Interval    %user    %nice    %system" \
+              "    %iowait    %steal    %idle")
+        print("-------------------------------------" \
+              "------------------------------")
         for duration in elements:
-          if(int(duration['interval']) % 60 == 0):
-            duration['interval'] = (str(int(duration['interval'] / 60)) 
-            	+ " hr(s)")
+          if(duration['interval'] % 60 == 0):
+            duration['interval'] = (str(duration['interval'] / 60) + " hr(s)")
           else:
-            duration['interval'] = str(int(duration['interval'])) + " min(s)"
-          for key in duration.keys():
-            if(key != 'interval'):
-              duration[key] = duration[key]
-              if(len(duration[key]) < 5):
-                #Append a 0 to the beginning for formatting purposes
-                duration[key] = "0" + duration[key]
+            duration['interval'] = str(duration['interval']) + " min(s)"
           print("%-12s%-9s%-9s%-11s%-11s%-10s%s"%(duration['interval'], 
           	duration['user'],duration['nice'],duration['system'],
             	duration['iowait'],duration['steal'],duration['idle']))
       #If "show" is not passed as an argument then the client outputs the JSON
       else:
-        print(json.dumps(jout))
-        print
+         jout = {'cpu-data': elements}
+         print(json.dumps(jout))
+         print
 
 if __name__ == "__main__":
    Client().run()

@@ -1,4 +1,4 @@
-TESTS = vyatta-pxe-boot.sh
+TESTS = vyatta-pxe-boot.sh test_syslog.pl
 
 check:
 	ln -s ../scripts/yangop-get-sensor yangop_get_sensor.py

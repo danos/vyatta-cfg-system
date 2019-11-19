@@ -12,9 +12,20 @@ Build-Depends:
  libnetaddr-ip-perl,
  libtest-mockobject-perl,
  pylint3,
+ python3-dbus,
+ python3-gi,
  python3-vyatta-cfgclient,
  ronn | ruby-ronn,
  shunit2,
+ libvyatta-cfg1,
+ libtest2-suite-perl,
+ libjson-perl,
+ libjson-xs-perl,
+ libtemplate-perl,
+ libtest-tempdir-tiny-perl,
+ libtest-mockmodule-perl,
+ libtest-mockobject-perl,
+ libarray-utils-perl
 Standards-Version: 3.9.6
 
 Package: vyatta-system-journal-v1-yang
@@ -50,9 +61,9 @@ Description: vyatta-system-misc-v1 module
 Package: vyatta-system-network-v1-yang
 Architecture: all
 Depends:
- vyatta-dataplane-cfg-arp-0,
+ vplane-config (>= 2.47),
  vyatta-dataplane-cfg-ip4-0,
- vyatta-dataplane-cfg-ip6-0,
+ vyatta-dataplane-cfg-pb-vyatta:ip6-0,
  vyatta-interfaces (>= 1.32),
  vyatta-system,
  ${misc:Depends},
@@ -82,6 +93,7 @@ Depends:
  vyatta-cfg (>= 1.16),
  vyatta-debian-system-config (>= 1.8),
  vyatta-system,
+ rsyslog-openssl (>= 8.1908.0),
  ${misc:Depends},
  ${yang:Depends}
 Breaks: vyatta-cfg-system (<< 1.6.0)
@@ -100,6 +112,19 @@ Depends:
  ${yang:Depends}
 Description: vyatta-system-syslog-routing-instance-v1 module
  Syslog VRF configuration
+
+Package: vyatta-op-generate-syslog-v1-yang
+Architecture: all
+Depends:
+ vyatta-cfg (>= 1.16),
+ vyatta-debian-system-config (>= 1.8),
+ vyatta-system,
+ ${misc:Depends},
+ ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-op-generate-syslog-v1 module
+ Syslog self-signed x509 certificate generator
 
 Package: vyatta-system
 Architecture: any
@@ -156,6 +181,7 @@ Depends:
  vyatta-debian-systemd-config,
  vyatta-ipmi,
  vyatta-opd,
+ vyatta-platform-util,
  vyatta-util (>= 0.16),
  whois,
  wireshark-common,
@@ -208,12 +234,6 @@ Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-login-radius-routing-instance-v1 module
  The YANG module for vyatta-system-login-radius-routing-instance-v1
-
-Package: vyatta-op-show-log-v1-yang
-Architecture: all
-Depends: ${misc:Depends}, ${yang:Depends}
-Description: vyatta-op-show-log-v1 module
- The YANG module for show log operational commands
 
 Package: vyatta-op-show-hardware-v1-yang
 Architecture: all

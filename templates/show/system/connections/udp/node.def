@@ -1,2 +1,2 @@
 help: Show UDP socket information
-run: /sbin/ss -u -a -r
+run: ss -u -a -r

@@ -60,6 +60,12 @@ module vyatta-system-syslog-v1 {
 
 		 Syslog configuration";
 
+	revision 2019-10-17 {
+		description "Limits TLS peers to one due to rsyslog omfwd module only supporting one peer.";
+	}
+	revision 2019-08-29 {
+		description "Adds TLS encryption grouping for remote logging";
+	}
 	revision 2019-05-15 {
 		description "Add discard action";
 	}
@@ -421,6 +427,123 @@ module vyatta-system-syslog-v1 {
 		}
 	}
 
+	grouping tls-cipher-suite {
+		list cipher-suite {
+			configd:help "Choose the TLS cipher suite to be used";
+			description "TLS cipher suite.";
+			min-elements 1;
+			key "cipher";
+			leaf cipher {
+				type enumeration {
+					enum "ECDHE-ECDSA-AES128-GCM-SHA256" {
+						configd:help "AES 128bit GCM using SHA256";
+						description "Advanced Encryption Standard
+						with 128bit key in Galois/Counter mode
+						(AES 128 GCM) using Secure Hash Algorithm
+						256 (SHA256).";
+					}
+					enum "ECDHE-ECDSA-AES256-GCM-SHA384" {
+						configd:help "AES 256bit GCM using SHA384";
+						description "Advanced Encryption Standard
+						with 256bit key in Galois/Counter mode
+						(AES 256 GCM) using Secure Hash Algorithm
+						384 (SHA384).";
+					}
+				}
+			}
+		}
+	}
+	grouping syslog-remote-tls {
+		container tls {
+			configd:help "Enable TLS encryption for remote logging";
+			description "Set TLS encryption parameters for remote logging.";
+			presence "A Syslog TLS configuration is enabled";
+			must "../protocol = 'tcp'" {
+				error-message "TCP required for TLS connections";
+			}
+ 			uses tls-cipher-suite;
+			list certificate-authority {
+				configd:help "Name of Certificate Authority. Must be located in /config/auth";
+				description "Name of Certificate Authority.";
+				max-elements 1;
+				key "CA";
+				leaf CA {
+					type string;
+				}
+				leaf file {
+					configd:help "Path to CA file";
+					description "Path to CA file. Must be located in /config/auth.";
+					type string {
+						length 1..max;
+					}
+					mandatory true;
+				}
+			}
+			container local-certificate {
+				configd:help "Local certificate parameters";
+				description "Local certificate location and parameters.";
+				leaf certificate {
+					configd:help "Path to local Certificate file. Must be located in /config/auth";
+					description "Path to local Certificate file. Must be located in /config/auth.";
+					type string {
+						length 1..max;
+					}
+					mandatory true;
+				}
+				leaf key {
+					configd:help "Path to local Certificate key file. Must be located in /config/auth";
+					description "Path to local Certificate key file. Must be located in /config/auth.";
+					type string {
+						length 1..max;
+					}
+					mandatory true;
+				}
+			}
+			container authentication {
+				configd:help "Authentication parameters needed for TLS";
+				description "Authentication parameters needed for TLS";
+				leaf mode {
+					configd:help "x509 authentication mode";
+					description "Choose the x509 authentication mode";
+					type enumeration {
+						enum "x509/fingerprint" {
+							configd:help "Certificate fingerprint authentication";
+							description "In x509/fingerprint mode, both the
+								     client and server certificate must be signed
+								     by the same root CA.";
+						}
+						enum "x509/name" {
+							configd:help "Certificate validation and subject name authentication";
+							description "Certificate validation and subject name authentication.";
+						}
+					}
+					mandatory true;
+				}
+				list peers {
+					configd:help "Peer related parameters";
+					description "Peer related parameters.";
+					max-elements 1;
+					key "peer";
+					leaf peer {
+						configd:help "Hostname of peer";
+						description "Hostname of peer.";
+						type string {
+							length 1..max;
+						}
+					}
+					leaf fingerprint {
+						configd:help "Accepted fingerprint (SHA1)";
+						description "Accepted fingerprint (SHA1).";
+						type string {
+							pattern 'SHA1(:[0-9a-fA-F][0-9a-fA-F]){20}';
+							length 1..max;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	grouping syslog-remote {
 		list host {
 			configd:help "Logging to a remote host";
@@ -433,6 +556,21 @@ module vyatta-system-syslog-v1 {
 			}
 			uses facility;
 			uses msg-regex;
+			leaf protocol {
+				configd:help "Transport protocol";
+				description "Transport protocol";
+				type enumeration {
+					enum "udp" {
+						configd:help "User Datagram Protocol (UDP)";
+						description "User Datagram Protocol (UDP)";
+					}
+					enum "tcp" {
+						configd:help "Transmission Control Protocol (TCP)";
+						description "Transmission Control Protocol (TCP)";
+					}
+				}
+			}
+			uses syslog-remote-tls;
 			leaf facility-override {
 				description "Override replaces facility field in all logs to host.";
 				type facility-no-all;

@@ -12,17 +12,24 @@ use Getopt::Long;
 use Vyatta::Config;
 use Vyatta::VPlaned;
 
+use vyatta::proto::IP6RedirectsConfig;
+
 my ($action);
 
 sub set_ip6_redirects_action {
     my $cstore = new Vyatta::VPlaned;
     my $cmd = "ip6";
 
-    if ( $action eq 'true' ) {
-	$cstore->store( "$cmd", "$cmd redirects disable", "ALL", "SET" );
-    } else {
-	$cstore->store( "$cmd", "$cmd redirects enable", "ALL", "SET" );
-    }
+    my $enable_redirects = $action eq 'true' ? 0 : 1;
+
+    my $redirect = IP6RedirectsConfig->new({
+	enable_redirects  => $enable_redirects
+				     });
+
+    $cstore->store_pb(
+	"ip6 redirects",
+	$redirect,
+	"vyatta:ip6");
 }
 
 sub usage {

@@ -4,7 +4,6 @@
 #
 # **** License ****
 # Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
-#
 # Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
 # All rights reserved.
 #
@@ -28,7 +27,7 @@
 print_usage()
 {
     echo "Usage:"
-    echo -e "\t$0 update <type of arp paramter> <value of arp paramter> <ipv4/ipv6>"
+    echo -e "\t$0 update <type of arp parameter> <value of arp parameter> {ipv4/ipv6}"
 }
 
 set_table_thresholds() {
@@ -43,13 +42,24 @@ set_table_thresholds() {
 
 update_arp_param ()
 {
- local arp_type=$1
- local arp_value=$2
- local ip_type=$3
+ local arp_type=$2
+ local arp_value=$3
+ local ip_type=$4
  case "$arp_type" in
 
      table-size)
+        # Apply default for delete action, which only occurs when parent node removed
+        if [ "$1" == "delete" ]; then
+            arp_value=8192
+        fi
+
+        # Kernel configuration
         set_table_thresholds "$ip_type" "$arp_value"
+
+        # Dataplane configuration
+        if [ "$ip_type" == "ipv6" ]; then
+            /opt/vyatta/sbin/nbr-res-cfg.pl --action=SET --param=max-entry --value="$arp_value" --ipv6
+        fi
         ;;
 
      *)
@@ -63,12 +73,12 @@ update_arp_param ()
 #
 
 case "$1" in
-    update)
+    update|delete)
         if [ $# -ne 4 ]; then
                 print_usage
                 exit 1
         fi
-        update_arp_param "$2" "$3" "$4"
+        update_arp_param "$1" "$2" "$3" "$4"
         ;;
 
     *)

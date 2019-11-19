@@ -5,7 +5,7 @@
 # Copyright (c) 2018-2019 AT&T Intellectual Property.
 #    All Rights Reserved.
 #
-# SPDX-License-Identifier: LGPL-2.1-only
+# SPDX-License-Identifier: GPL-2.0-only
 
 package Vyatta::PlatformConfig;
 use strict;

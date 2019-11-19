@@ -22,8 +22,6 @@ override_dh_auto_install:
 	dh_auto_install --destdir=debian/vyatta-system
 	mkdir -p debian/tmp/usr/share
 	mv debian/vyatta-system/usr/share/configd debian/tmp/usr/share
-	mkdir -p debian/tmp/opt/vyatta/share/vyatta-op/templates/show/log
-	mv debian/vyatta-system/opt/vyatta/share/vyatta-op/templates/show/log/node.def debian/tmp/opt/vyatta/share/vyatta-op/templates/show/log
 
 override_dh_install:
 	dh_install

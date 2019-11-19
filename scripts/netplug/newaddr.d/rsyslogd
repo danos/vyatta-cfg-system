@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
 #
@@ -9,41 +9,8 @@ use strict;
 use warnings;
 
 use lib "/opt/vyatta/share/perl5/";
-use Vyatta::Interface;
-use Sys::Syslog qw(:standard :macros);
+use Vyatta::Syslog;
 
-# rsyslog is updated based on a template stored during config if an address is
-# added or deleted on its source interface, if configured. If the resulting
-# config differs from the existing config, then rsyslogd is restarted for the
-# new config to take effect. The script called retrieves the addresses on the
-# interface using the ip show command again, so only uses the device given in
-# the netplug notification, not the detailed address add/delete info. This is to
-# handle the case when multiple addresses are configured on the source interface
-
-sub usage {
-    print <<EOF;
-Usage: <device> <inet|inet6> <address>
-EOF
-    exit 1;
-}
-
-my $dev   = shift;
-my $proto = shift;
-my $addr  = shift;
-
-usage() unless defined($dev);
-usage() unless defined($proto);
-usage() unless defined($addr);
-
-my $intf = new Vyatta::Interface($dev);
-die "Unknown interface name or type: $dev\n" unless defined($intf);
-
-my $vrf = $intf->vrf();
-my $vrf_str = defined($vrf) ? "--vrf=$vrf" : "";
-
-qx(/opt/vyatta/sbin/vyatta_syslog_template.pl --op-mode --src-intf=$dev $vrf_str);
-if ($?) {
-    qx(service rsyslog restart);
-}
+update_rsyslog_config();
 
 exit 0;

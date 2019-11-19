@@ -36,7 +36,7 @@ def check_ipmi_support():
     return None
 
 def show_hardware_fru(frus):
-    if check_ipmi_support():
+    if check_ipmi_support() and 'fru' in frus:
         for fru in frus['fru']:
             for key, value in frus_map:
                 if fru[key] != "unavailable":
