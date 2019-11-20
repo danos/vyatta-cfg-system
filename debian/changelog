@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * Make the syslog global target obsolete (Closes: VRVDR-49099)
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 20 Nov 2019 11:47:23 +0000
+
 vyatta-cfg-system (2.26) unstable; urgency=medium
 
   * DANOS Import Master
