@@ -57,6 +57,10 @@ module vyatta-system-network-routing-instance-v1 {
 
 		 The YANG module for vyatta-system-network-routing-instance-v1";
 
+	revision 2019-11-21 {
+		description "Update system static-host-mapping actions";
+	}
+
 	revision 2016-05-31 {
 		description "Support DNS subset of system-network.";
 	}
@@ -86,6 +90,9 @@ module vyatta-system-network-routing-instance-v1 {
 				description "Name server list for domain lookup in routing instance";
 				configd:create "/opt/vyatta/share/tmplscripts/system/name-server/configd_create2";
 				configd:delete "/opt/vyatta/share/tmplscripts/system/name-server/configd_delete2";
+			}
+			refine static-host-mapping {
+				configd:end "/opt/vyatta/sbin/vyatta_static_host_mapping --vrf=$VAR(../../@)";
 			}
 			refine static-host-mapping/host-name/inet {
 				mandatory "true";
