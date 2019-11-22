@@ -1,2 +1,0 @@
-#!/opt/vyatta/bin/cliexpr
-commit:expression: $VAR(./inet) != "" ; "IP address for the static mapping must be set"
