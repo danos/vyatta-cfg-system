@@ -57,6 +57,10 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2019-11-21 {
+		description "Update system static-host-mapping actions";
+	}
+
 	revision 2019-10-15 {
 		description "Allow ND table size of 64K entries";
 	}
@@ -301,9 +305,9 @@ module vyatta-system-network-v1 {
 			presence "true";
 			configd:priority "400";
 			configd:help "Map host names to addresses";
+			configd:end "/opt/vyatta/sbin/vyatta_static_host_mapping";
 			list host-name {
 				configd:help "Host name for static address mapping";
-				configd:end "/opt/vyatta/share/tmplscripts/system/static-host-mapping/host-name/configd_end.sh";
 				configd:validate "/opt/vyatta/share/tmplscripts/system/static-host-mapping/host-name/configd_validate1.cli";
 				key "tagnode";
 				leaf tagnode {

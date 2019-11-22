@@ -96,6 +96,7 @@ sbin_SCRIPTS += scripts/vyatta-platform
 sbin_SCRIPTS += scripts/ip6_disable_redirects
 sbin_SCRIPTS += scripts/ipv6-wait-for-dad
 sbin_SCRIPTS += scripts/vyatta-platform-setup
+sbin_SCRIPTS += scripts/vyatta_static_host_mapping
 
 share_perl5_login_DATA = lib/Vyatta/Login/User.pm
 
