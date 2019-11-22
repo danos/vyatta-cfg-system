@@ -324,7 +324,9 @@ module vyatta-system-network-v1 {
 					configd:help "Address [REQUIRED]";
 				}
 				leaf-list alias {
-					type string;
+					type string {
+						pattern '[0-9A-Za-z][-\.0-9A-Za-z]*[0-9A-Za-z]';
+					}
 					ordered-by "user";
 					configd:help "Alias for this address";
 				}
