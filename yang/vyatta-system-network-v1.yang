@@ -308,7 +308,6 @@ module vyatta-system-network-v1 {
 			configd:end "/opt/vyatta/sbin/vyatta_static_host_mapping";
 			list host-name {
 				configd:help "Host name for static address mapping";
-				configd:validate "/opt/vyatta/share/tmplscripts/system/static-host-mapping/host-name/configd_validate1.cli";
 				key "tagnode";
 				leaf tagnode {
 					type string {
@@ -321,6 +320,7 @@ module vyatta-system-network-v1 {
 						type types:ipv4-address;
 						type types:ipv6-address;
 					}
+					mandatory true;
 					configd:help "Address [REQUIRED]";
 				}
 				leaf-list alias {
