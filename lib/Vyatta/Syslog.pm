@@ -837,9 +837,8 @@ sub update_rsyslog_config {
     if ( !@actions ) {
         unlink $SYSLOG_CONF;
         #
-        # Stop service
-        system("systemctl disable rsyslog &>/dev/null");
-        system("service rsyslog stop");
+        # Restart service
+        system("service rsyslog restart");
         #
         # Success
         return 0;
@@ -864,7 +863,6 @@ sub update_rsyslog_config {
         close $fh;
         #
         # Restart service
-        system("systemctl enable rsyslog &>/dev/null");
         system("service rsyslog restart");
         #
         # Success
@@ -873,7 +871,7 @@ sub update_rsyslog_config {
 
     #
     # Success, but no changes made...
-    return 1;
+    return 0;
 }
 
 1;
