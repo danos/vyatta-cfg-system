@@ -606,6 +606,7 @@ sub get_action {
         # What action are we building?
         my $act_config;
         $c->{protocol}  = 'udp' unless defined $c->{protocol};
+        $c->{protocol}  = 'udp' if ( $TARGET =~ /console/ );
         $c->{'ip-port'} = '514';
         $c->{'ip-port'} = $port if defined $port;
         if ( $c->{protocol} eq 'tcp' ) {
@@ -704,7 +705,9 @@ END
     $finished_template =~ s/\s+/ /g;
     $finished_template =~ s/ $//g;
 
-    $finished_template = $finished_template . "\n" . $cert_locations;
+    $finished_template = $finished_template . "\n";
+    $finished_template = $finished_template . $cert_locations
+      if ( $TARGET !~ /console/ );
     return $finished_template;
 }
 
