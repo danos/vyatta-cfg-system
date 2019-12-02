@@ -23,8 +23,6 @@ systemdconfdir = /etc/systemd/system.conf.d
 systemdconf_DATA = etc/systemd/system.conf.d/30-vyatta.conf
 dbussystemdconfdir = /etc/dbus-1/system.d
 dbussystemdconf_DATA = etc/dbus-1/system.d/net.vyatta.eng.cpu.history.conf
-rsyslogdir = /opt/vyatta/share/rsyslog-configs
-rsyslog_DATA = usr/share/rsyslog-configs/vyatta-action.template
 techsupportdir = $(datadir)/vyatta-op/functions/tech-support.d
 
 bin_PROGRAMS =
@@ -69,10 +67,7 @@ sbin_SCRIPTS += scripts/system/vyatta_sendtrap_daemonstopped
 sbin_SCRIPTS += scripts/system/vyatta_tally_rpc
 sbin_SCRIPTS += scripts/system/vyatta_update_hosts.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_login.pl
-sbin_SCRIPTS += scripts/system/vyatta_update_logrotate.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_resolv.pl
-sbin_SCRIPTS += scripts/system/vyatta_update_syslog.pl
-sbin_SCRIPTS += scripts/system/vyatta_syslog_gencerts
 sbin_SCRIPTS += scripts/system/vyatta_update_console.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_journal.pl
 sbin_SCRIPTS += scripts/system/update_password_quality.pl
@@ -105,12 +100,8 @@ share_perl5_DATA += lib/Vyatta/ioctl.pm
 share_perl5_DATA += lib/Vyatta/FeatureConfig.pm
 share_perl5_DATA += lib/Vyatta/PlatformConfig.pm
 share_perl5_DATA += lib/Vyatta/RestoreIPv6Addr.pm
-share_perl5_DATA += lib/Vyatta/Syslog.pm
 
 sysconf_DATA += sysconf/level
-
-cronhourlydir = /etc/cron.hourly
-cronhourly_SCRIPTS = sysconf/vyatta-logrotate-hourly
 
 vyatta_config_scriptsdir = /opt/vyatta/etc/config/scripts
 vyatta_config_scripts_SCRIPTS = scripts/vyatta-postconfig-bootup.script

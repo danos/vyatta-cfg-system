@@ -1,4 +1,3 @@
-opt/vyatta/etc/logrotate
 opt/vyatta/etc/netdevice.d
 var/core
 var/log/user

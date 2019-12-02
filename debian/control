@@ -87,45 +87,6 @@ Replaces: vyatta-cfg-system (<< 1.6.0)
 Description: vyatta-system-package-v1 module
  Package management configuration
 
-Package: vyatta-system-syslog-v1-yang
-Architecture: all
-Depends:
- vyatta-cfg (>= 1.16),
- vyatta-debian-system-config (>= 1.8),
- vyatta-system,
- rsyslog-openssl (>= 8.1908.0),
- ${misc:Depends},
- ${yang:Depends}
-Breaks: vyatta-cfg-system (<< 1.6.0)
-Replaces: vyatta-cfg-system (<< 1.6.0)
-Description: vyatta-system-syslog-v1 module
- Syslog configuration
-
-Package: vyatta-system-syslog-routing-instance-v1-yang
-Architecture: all
-Depends:
- libvyatta-vrfmanager-perl,
- rsyslog-czmq,
- systemd,
- vyatta-system,
- ${misc:Depends},
- ${yang:Depends}
-Description: vyatta-system-syslog-routing-instance-v1 module
- Syslog VRF configuration
-
-Package: vyatta-op-generate-syslog-v1-yang
-Architecture: all
-Depends:
- vyatta-cfg (>= 1.16),
- vyatta-debian-system-config (>= 1.8),
- vyatta-system,
- ${misc:Depends},
- ${yang:Depends}
-Breaks: vyatta-cfg-system (<< 1.6.0)
-Replaces: vyatta-cfg-system (<< 1.6.0)
-Description: vyatta-op-generate-syslog-v1 module
- Syslog self-signed x509 certificate generator
-
 Package: vyatta-system
 Architecture: any
 Depends:
@@ -153,10 +114,8 @@ Depends:
  libipc-system-simple-perl,
  libnetaddr-ip-perl,
  libpam-runtime (>= 1.0.1-5),
- libparse-syslog-perl,
  libswitch-perl,
  libsys-hostname-long-perl,
- libsys-syslog-perl,
  libtemplate-perl,
  libtime-duration-perl,
  libvyatta-cfgclient-perl,
@@ -168,7 +127,6 @@ Depends:
  procps (>= 1:3.2.7-3),
  python3,
  radvd,
- rsyslog | system-log-daemon,
  sudo,
  systemd,
  systemd-journal-remote,

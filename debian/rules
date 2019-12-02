@@ -25,12 +25,9 @@ override_dh_auto_install:
 
 override_dh_install:
 	dh_install
-	mkdir -p debian/vyatta-system-syslog-v1-yang/lib/systemd/system/rsyslog.service.d
-	install --mode=644 debian/vyatta-syslog-snmptrap.conf \
-		debian/vyatta-system-syslog-v1-yang/lib/systemd/system/rsyslog.service.d
-	mkdir -p debian/vyatta-system-syslog-v1-yang/lib/systemd/system/systemd-journald.service.d
+	mkdir -p debian/vyatta-system-journal-v1-yang/lib/systemd/system/systemd-journald.service.d
 	install --mode=644 debian/vyatta-systemd-journald-snmptrap.conf \
-		debian/vyatta-system-syslog-v1-yang/lib/systemd/system/systemd-journald.service.d
+		debian/vyatta-system-journal-v1-yang/lib/systemd/system/systemd-journald.service.d
 
 override_dh_systemd_start:
 	dh_systemd_start --no-start \

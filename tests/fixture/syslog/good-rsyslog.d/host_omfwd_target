@@ -1,1 +1,0 @@
-*.err action( Type="omfwd" Target="100.0.0.200" Protocol="udp" Port="514" Template="SystemdUnitTemplate" )

@@ -7,6 +7,4 @@ debian/system-preconfigure.service /lib/systemd/system/
 debian/vyatta-cpu-history-daemon.service /lib/systemd/system/
 debian/vyatta-platform-setup.service /lib/systemd/system/
 debian/vyatta-pre-boot.target /lib/systemd/system/
-scripts/netplug/deladdr.d/rsyslogd /etc/netplug/deladdr.d
-scripts/netplug/newaddr.d/rsyslogd /etc/netplug/newaddr.d
 usr/share/pam-configs/vyatta-pam-tally.template opt/vyatta/share/pam-configs/
