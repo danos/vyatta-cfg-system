@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.2) unstable; urgency=medium
+
+  [ Charles (Chas) Williams ]
+  * Never stop/disable rsyslogd (Bugfix: VRVDR-49041)
+
+ -- William Ivory <william.ivory@intl.att.com>  Mon, 02 Dec 2019 13:48:52 +0000
+
 vyatta-cfg-system (2.27.1) unstable; urgency=medium
 
   [ Nachiketa Prachanda ]
