@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.27.3) unstable; urgency=medium
+
+  [ Sharmila Podury ]
+  * Use of uninitialized value when setting syslog facility-override
+  * Extra syslog tls options in configuration file
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 03 Dec 2019 10:06:50 +0000
+
 vyatta-cfg-system (2.27.2) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
