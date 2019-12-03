@@ -844,6 +844,7 @@ sub update_rsyslog_config {
         unlink $SYSLOG_CONF;
         #
         # Restart service
+        system("systemctl reset-failed rsyslog");
         system("service rsyslog restart");
         #
         # Success
@@ -869,6 +870,7 @@ sub update_rsyslog_config {
         close $fh;
         #
         # Restart service
+        system("systemctl reset-failed rsyslog");
         system("service rsyslog restart");
         #
         # Success
