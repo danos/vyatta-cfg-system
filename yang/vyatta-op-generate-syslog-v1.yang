@@ -53,12 +53,13 @@ module vyatta-op-generate-syslog-v1 {
 		This creates a self signed certificate chain that contains two
 		certificates - a root CA and a Host CA. The Host CA cert is configurable.";
 
-	revision 2019-09-20 {
+	revision 2019-12-04 {
 		description "Initial version";
 	}
 
 	opd:augment /generate:generate {
 		opd:command syslog {
+			status obsolete;
 			opd:help "Generate Syslog certificate files";
 
 			opd:command x509 {
