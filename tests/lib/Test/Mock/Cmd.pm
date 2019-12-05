@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 package Test::Mock::Cmd;
 
 use strict;

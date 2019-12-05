@@ -12,6 +12,10 @@ Copyright: 2017-2019, AT&T Intellectual Property.
            2018-2019, AT&T Intellectual property.
 License: BSD-3-Clause
 
+Files: tests/lib/Test/Mock/Cmd.pm
+Copyright: 2011 cPanel, Inc.
+License: GPL-2.0
+
 License: GPL-2.0
  This program is free software; you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
