@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.5) unstable; urgency=medium
+
+  [ Nachiketa Prachanda ]
+  * update rsyslog config after static host config
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 05 Dec 2019 14:08:27 +0000
+
 vyatta-cfg-system (2.27.4) unstable; urgency=medium
 
   [ Charles (Chas) Williams ]
