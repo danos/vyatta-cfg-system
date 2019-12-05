@@ -113,6 +113,7 @@ def main():
     cfg = configd.Client()
     static_host_map = get_cfg_mapping(cfg, args.vrf)
     update_hosts(host_file, static_host_map)
+    os.system('/opt/vyatta/sbin/vyatta_update_syslog.pl')
 
 
 if __name__ == "__main__":
