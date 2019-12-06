@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.6) unstable; urgency=medium
+
+  [ Daniel Gollub ]
+  * yang: generate syslog
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 06 Dec 2019 15:16:51 +0000
+
 vyatta-cfg-system (2.27.5) unstable; urgency=medium
 
   [ Nachiketa Prachanda ]
