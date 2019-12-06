@@ -349,6 +349,17 @@ sub get_src_intf {
     return $src_intf;
 }
 
+sub get_static_host_ip {
+    my ( $config, $host ) = @_;
+
+    return unless defined( $config->{'static_hosts'} );
+
+    foreach my $ele ( @{ $config->{'static_hosts'} } ) {
+        return $ele->{inet} if ( $ele->{tagnode} eq $host );
+    }
+    return;
+}
+
 #
 # Get active config's IP address
 # Expects Vyatta Statistics format
@@ -385,23 +396,36 @@ sub get_active_ip {
             # Pick first AFINET matching address found
             my ( $TARGET, $port ) =
               get_target_port( $config->{host}[$index]->{tagnode} );
-            my $IP     = new Net::IP($TARGET);
-            my $afinet = $IP->ip_get_version();
+
+            my $thost;
+            $thost = get_static_host_ip( $config, $TARGET );
+            $thost = $TARGET if not defined $thost;
+
+            my $taddr = new NetAddr::IP($thost);
+
+            # $afinet is 4 when we fail to resolv $thost
+            # This is a problematic corner case where address
+            # isn't resolvabe now but may become resolvable
+            # later.
+            my $afinet = 4;
+            if ( defined($taddr) ) {
+                my ($tip) = Net::IP::ip_splitprefix($taddr);
+                $afinet = Net::IP::ip_is_ipv6($tip) ? 6 : 4;
+            }
             foreach my $active_ip ( @{ $active_intf->{addresses} } ) {
-                my $ACTIVE_IP =
-                  new Net::IP( $active_ip->{address} =~ s/\/.*// );
-                if ( $afinet == $ACTIVE_IP->ip_get_version() ) {
-                    if (
-                        $afinet == 6
-                        && (   $active_ip->{address} =~ /^FE80/
-                            || $active_ip->{address} =~ /^fe80/ )
-                      )
-                    {
-                        next;
-                    }
-                    $address = $active_ip->{address};
-                    last;
-                }
+                my $if_addr     = new NetAddr::IP( $active_ip->{address} );
+                my ($ACTIVE_IP) = Net::IP::ip_splitprefix($if_addr);
+                my $if_afinet   = Net::IP::ip_is_ipv6($ACTIVE_IP) ? 6 : 4;
+
+                next if ( $afinet != $if_afinet );
+                next
+                  if (
+                    $afinet == 6
+                    && (   $active_ip->{address} =~ /^FE80/
+                        || $active_ip->{address} =~ /^fe80/ )
+                  );
+                $address = $active_ip->{address};
+                last;
             }
 
             openlog( "syslog", "", LOG_USER );
@@ -534,14 +558,15 @@ sub get_action {
     my ( $TARGET, $PORT );
     my @fwd_actions;
 
-    # Use SYSTEMD_UNIT with SYSLOG_INDENTIFIER so that full unit name is printed,
-    # eg: sshd@blue.service
+   # Use SYSTEMD_UNIT with SYSLOG_INDENTIFIER so that full unit name is printed,
+   # eg: sshd@blue.service
     my $template_str = ' Template="SystemdUnitTemplate"';
 
     # Extract TARGET & PORT from host string
     if ( $host =~ /^:/ ) {
+
         # Target is a user terminal of the form :omusrmsg:<user>
-	$TARGET = $host;
+        $TARGET = $host;
         return "\t$TARGET\n";
     } elsif ( $host =~ m/^@/ ) {
         my ( $ohost, $template ) = get_override_target_template($host);
@@ -597,6 +622,9 @@ sub get_action {
 
     # Main
     #
+    my $target_static_ip = get_static_host_ip( $config, $TARGET );
+    $TARGET = $target_static_ip if $target_static_ip;
+
     my $gen_action_map = sub {
         my ($c)            = @_;
         my $encrypt_params = $c->{tls};
@@ -606,8 +634,8 @@ sub get_action {
 
         # What action are we building?
         my $act_config;
-        $c->{protocol}  = 'udp' unless defined $c->{protocol};
-        $c->{protocol}  = 'udp' if ( $TARGET =~ /console/ );
+        $c->{protocol} = 'udp' unless defined $c->{protocol};
+        $c->{protocol} = 'udp' if ( $TARGET =~ /console/ );
         $c->{'ip-port'} = '514';
         $c->{'ip-port'} = $PORT if defined $PORT;
         if ( $c->{protocol} eq 'tcp' ) {
@@ -695,7 +723,7 @@ END
 
     open( my $fh, '<', "$ACTION_TEMPLATE" )
       or die "Could not find vyatta-action.template";
-    my $tt      = Template->new();
+    my $tt = Template->new();
     my %tree_in = ( 'actions' => \@fwd_actions );
     my $finished_template;
     $tt->process( $fh, \%tree_in, \$finished_template )
@@ -812,6 +840,7 @@ sub update_rsyslog_config {
 
     my @actions;
     my $vrf;
+    my $static_hosts;
     foreach
       my $pconfig ( $config, @{ $config->{routing}->{'routing-instance'} } )
     {
@@ -820,12 +849,14 @@ sub update_rsyslog_config {
         undef %entries;
         undef %fac_override;
 
-        $vrf = $pconfig->{'instance-name'}
-          if defined $pconfig->{'instance-name'};
+        $vrf = $pconfig->{'instance-name'};
+        $static_hosts =
+          $pconfig->{'system'}->{'static-host-mapping'}->{'host-name'};
         $pconfig = $pconfig->{'system'}->{'syslog'}
           if defined $pconfig->{system}->{syslog};
         $pconfig->{interfaces} = $statistics if defined $statistics;
         next unless defined $pconfig;
+        $pconfig->{'static_hosts'} = $static_hosts if defined $static_hosts;
 
         get_global_logging_config($pconfig);
         get_console_logging_config($pconfig);
