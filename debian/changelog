@@ -1,3 +1,13 @@
+vyatta-cfg-system (2.27.7) unstable; urgency=medium
+
+  [ Erik Ziegenbalg ]
+  * Syslog:TEST: Check that stderr is empty (Fixes: VRVDR-48988)
+
+  [ Nachiketa Prachanda ]
+  * syslog: resolv static hosts targets in vrfs
+
+ -- William Ivory <william.ivory@intl.att.com>  Mon, 09 Dec 2019 11:07:45 +0000
+
 vyatta-cfg-system (2.27.6) unstable; urgency=medium
 
   [ Daniel Gollub ]
