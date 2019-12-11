@@ -60,6 +60,9 @@ module vyatta-system-syslog-v1 {
 
 		 Syslog configuration";
 
+	revision 2019-12-11 {
+		description "Restrict source-interface to UDP";
+	}
 	revision 2019-11-15 {
 		description "Obsolete syslog global target.";
 	}
@@ -587,6 +590,9 @@ module vyatta-system-syslog-v1 {
 		}
 		uses if:source-interface-leaf {
 			refine source-interface {
+				must "not(../host/protocol) or (../host/protocol = 'udp')" {
+					error-message "Source-interface is only supported over UDP.";
+				}
 				description
 					"The interface used to obtain the source IP address for
 					 packets sent to the remote host.

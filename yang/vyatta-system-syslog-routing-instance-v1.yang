@@ -57,6 +57,9 @@ module vyatta-system-syslog-routing-instance-v1 {
 
 		 Syslog VRF configuration";
 
+	revision 2019-12-11 {
+		description "Restrict source-interface to UDP";
+	}
 	revision 2018-04-23 {
 		description "Add routing instance constraint for source-interface leaf";
 	}
@@ -76,6 +79,9 @@ module vyatta-system-syslog-routing-instance-v1 {
 					"[routing:instance-name = current()/../../../routing:instance-name]" +
 					"/rif:interface/rif:name" {
 					error-message "Interface must be configured in this routing instance";
+				}
+				must "not(../host/protocol) or (../host/protocol = 'udp')" {
+					error-message "Source-interface is only supported over UDP.";
 				}
 			}
 		}
