@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.8) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * Syslog TCP and Source Interface cannot co-exist
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 12 Dec 2019 10:02:40 +0000
+
 vyatta-cfg-system (2.27.7) unstable; urgency=medium
 
   [ Erik Ziegenbalg ]
