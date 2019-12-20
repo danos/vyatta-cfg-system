@@ -418,12 +418,6 @@ sub get_active_ip {
                 my $if_afinet   = Net::IP::ip_is_ipv6($ACTIVE_IP) ? 6 : 4;
 
                 next if ( $afinet != $if_afinet );
-                next
-                  if (
-                    $afinet == 6
-                    && (   $active_ip->{address} =~ /^FE80/
-                        || $active_ip->{address} =~ /^fe80/ )
-                  );
                 $address = $active_ip->{address};
                 last;
             }
