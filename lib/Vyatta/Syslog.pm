@@ -391,7 +391,9 @@ sub get_active_ip {
       @{ $config->{interfaces}->{statistics}->{interface} };
     my $address;
     foreach my $active_intf (@active_interfaces) {
-        if ( $active_intf->{name} eq $dev ) {
+        if (   $active_intf->{name} eq $dev
+            && $active_intf->{'admin-status'} eq "up" )
+        {
 
             # Pick first AFINET matching address found
             my ( $TARGET, $port ) =
