@@ -1,3 +1,48 @@
+vyatta-cfg-system (2.28) unstable; urgency=medium
+
+  [ Sharmila Podury ]
+  * Use of uninitialized value when setting syslog facility-override
+
+  [ Nachiketa Prachanda ]
+  * top level commit script for static host mapping
+  * yang: use manadatory instead of validation script.
+  * yang: block invalid aliases in static host mapping
+
+  [ Sharmila Podury ]
+  * Extra syslog tls options in configuration file
+
+  [ Charles (Chas) Williams ]
+  * Never stop/disable rsyslogd (Bugfix: VRVDR-49041)
+
+  [ Erik Ziegenbalg ]
+  * Syslog:TEST: Check that stderr is empty (Fixes: VRVDR-48988)
+
+  [ Charles (Chas) Williams ]
+  * Reset the failure counter when restarting (Bugfix: VRVDR-49041)
+
+  [ Daniel Gollub ]
+  * yang: generate syslog
+
+  [ Nachiketa Prachanda ]
+  * update rsyslog config after static host config
+  * syslog: resolv static hosts targets in vrfs
+
+  [ Mike Manning ]
+  * Syslog TCP and Source Interface cannot co-exist
+
+  [ Erik Ziegenbalg ]
+  * tests/lib/Mock/Cmd.pm Copyright
+
+  [ Mike Manning ]
+  * Syslog: IPv6 source address search does not need to check for link-
+    local
+  * Syslog: Source interface should only be used if admin state is up
+
+  [ Charles (Chas) Williams ]
+  * Remove rsyslog and logrotate configuration (Bugfix: VRVDR-48343)
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 07 Jan 2020 15:40:25 +0000
+
 vyatta-cfg-system (2.27) unstable; urgency=medium
 
   [ Nicholas Brown ]
