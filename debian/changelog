@@ -1,3 +1,12 @@
+vyatta-cfg-system (2.27.9) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * Syslog: IPv6 source address search does not need to check for link-
+    local
+  * Syslog: Source interface should only be used if admin state is up
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 07 Jan 2020 11:03:16 +0000
+
 vyatta-cfg-system (2.27.8) unstable; urgency=medium
 
   [ Mike Manning ]
