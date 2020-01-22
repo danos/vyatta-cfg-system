@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2007-2017, Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -13,7 +13,11 @@ source "$vyatta_env"
 declare -x BOOTFILE="$vyatta_sysconfdir/config/config.boot"
 
 # Vyatta config file and other relevant files
+
+# Info about scheduled rollback job for a CLI commit-confirm 
 CONF_JOB_FILE="$vyatta_sysconfdir/config/confirm.job"
+# Info about scheduled revert job for a Netconf confirmed commit
+CONF_COMMIT_JOB_FILE="$vyatta_sysconfdir/config/confirmed_commit.job"
 COMMITS_FILE=/config/archive/commits
 ARCHIVED_FILE_PREFIX=/config/archive/config.boot
 
@@ -70,6 +74,11 @@ restore_version() {
 
 # Set config file up correctly:
 #
+#  - if we reboot while a Netconf confirmed commit was pending, we need to cancel
+#    the scheduled job that will revert the configuration
+#  - if we reboot and see a revert configuration file from a Netconf confirmed commit,
+#    revert the configuration. This ensures we handle the case where a reboot occured
+#    after the step above completed but before the revert was completed
 #  - if we rebooted while a commit-confirm was pending, we need to
 #    rollback
 #  - if BOOTFILE is not readable, replace it with the default config if
@@ -78,6 +87,20 @@ restore_version() {
 #    config file.
 #
 init_bootfile () {
+	if [ -r "$CONF_COMMIT_JOB_FILE" ]; then
+		# Cancel the revert job for pending confirmed commit
+		echo "Cancelling pending Netconf confirmed commit job..."
+		job=`cat /config/confirmed_commit.job | python3 -c "import sys, json; print(json.load(sys.stdin)['job'])"`
+		atrm $job 2> /dev/null
+		rm -f $CONF_COMMIT_JOB_FILE
+	fi
+	revert_file="$ARCHIVED_FILE_PREFIX.revert.gz"
+	if [ -r "$revert_file" ]; then
+		# Restore pre-confirmed-commit configuration
+		echo "Reverting pending Netconf confirmed commit ..."
+		restore_version "revert"
+		rm -f $revert_file
+	fi
 	if [ -r "$CONF_JOB_FILE" ]; then
 		echo "Rollback for unconfirmed commit-confirm in progress ..."
 		job=`tail -n 1 $CONF_JOB_FILE`
