@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020, AT&T Intellectual Property.
+# All Rights Reserved.
+
+from vyatta import configd
+import subprocess
+import os
+
+def sysctl(name, value):
+    if value == True:
+        value = 1
+    elif value == False:
+        value = 0
+    else:
+        value = int(value)
+
+    if 'COMMIT_DEBUG' in os.environ:
+        print(['/sbin/sysctl', '-q', '-w', '{}={}'.format(var, value)])
+    subprocess.run(['/sbin/sysctl', '-q', '-w', '{}={}'.format(var, value)])
+
+sysctl_mapping = { 'panic-on-io-nmi':          'kernel.panic_on_io_nmi',
+                   'panic-on-oom':             'vm.panic_on_oom',
+                   'panic-on-oops':            'kernel.panic_on_oops',
+                   'panic-on-unknown-nmi':     'kernel.unknown_nmi_panic',
+                   'panic-on-unrecovered-nmi': 'kernel.panic_on_unrecovered_nmi',
+                   'reboot-on-panic':          'kernel.panic' }
+
+client = configd.Client()
+options = client.tree_get_full_dict('system options')
+fault_behavior = client.tree_get_full_dict('system fault-behavior')['fault-behavior']
+
+for name in sysctl_mapping:
+    var = sysctl_mapping[name]
+    value = fault_behavior[name]
+
+    if name == 'reboot-on-panic':
+
+        # allow deprecated value to take precedence
+        if 'reboot-on-panic' in options:
+            value = options['reboot-on-panic']
+
+        if value:
+            sysctl(var, fault_behavior['reboot-wait-after-panic'])
+        else:
+            sysctl(var, 0)
+    else:
+        sysctl(var, value)
