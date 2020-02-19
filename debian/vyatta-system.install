@@ -8,3 +8,4 @@ debian/vyatta-cpu-history-daemon.service /lib/systemd/system/
 debian/vyatta-platform-setup.service /lib/systemd/system/
 debian/vyatta-pre-boot.target /lib/systemd/system/
 usr/share/pam-configs/vyatta-pam-tally.template opt/vyatta/share/pam-configs/
+scripts/system-fault-behavior /opt/vyatta/postconfig.d/

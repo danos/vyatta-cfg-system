@@ -17,7 +17,7 @@ module vyatta-system-misc-v1 {
 		Web: www.att.com";
 
         description
-		"Copyright (c) 2018-2019 AT&T Intellectual Property
+		"Copyright (c) 2018-2020 AT&T Intellectual Property
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -53,6 +53,10 @@ module vyatta-system-misc-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Miscellaneous system configuration";
+
+	revision 2020-02-19 {
+		description "Add configuration for NMI and panic behaviors.";
+	}
 
 	revision 2018-12-18 {
 		description "Remove variable expansion from error message.";
@@ -141,16 +145,84 @@ module vyatta-system-misc-v1 {
 				}
 			}
 		}
-		container options {
-			presence "true";
-			configd:priority "400";
-			configd:help "System options";
+
+		container fault-behavior {
+			configd:help "Configure responses to software and hardware exceptions";
+			description "These options allow the end user to configure the response
+				     to unusual hardware and software exceptions. This is
+				     typically used to evoke a well-defined behavior in the
+				     event of these failures.";
+
+			leaf panic-on-io-nmi {
+				type boolean;
+				configd:help "Panic kernel when unexpected I/O NMI occurs.";
+				description "Panic kernel when unexpected I/O NMI occurs.";
+				default "false";
+				configd:end 'sysctl -q -w kernel.panic_on_io_nmi=$(if [ $VAR(@) == "true" ]; then echo 1; else echo 0; fi)';
+			}
+
+			leaf panic-on-oom {
+				type boolean;
+				configd:help "Panic kernel when an out-of-memory condition occurs.";
+				description "Panic kernel when an out-of-memory condition occurs.";
+				default "false";
+				configd:end 'sysctl -q -w vm.panic_on_oom=$(if [ $VAR(@) == "true" ]; then echo 1; else echo 0; fi)';
+			}
+
+			leaf panic-on-oops {
+				type boolean;
+				configd:help "Panic kernel when encountering an oops or BUG.";
+				description "Panic kernel when encountering an oops or BUG.";
+				default "true";
+				configd:end 'sysctl -q -w kernel.panic_on_oops=$(if [ $VAR(@) == "true" ]; then echo 1; else echo 0; fi)';
+			}
+
+			leaf panic-on-unknown-nmi {
+				type boolean;
+				configd:help "Panic kernel when an unknown NMI occurs.";
+				description "Panic kernel when an unknown NMI occurs.";
+				default "false";
+				configd:end 'sysctl -q -w kernel.unknown_nmi_panic=$(if [ $VAR(@) == "true" ]; then echo 1; else echo 0; fi)';
+			}
+
+			leaf panic-on-unrecovered-nmi {
+				type boolean;
+				configd:help "Panic kernel when an unrecoverable NMI occurs.";
+				description "Panic kernel when an unrecoverable NMI occurs.";
+				default "false";
+				configd:end 'sysctl -q -w kernel.panic_on_unrecovered_nmi=$(if [ $VAR(@) == "true" ]; then echo 1; else echo 0; fi)';
+			}
+
 			leaf reboot-on-panic {
 				type boolean;
 				configd:help "Reboot system on kernel panic";
 				default "true";
-				configd:update "/opt/vyatta/share/tmplscripts/system/options/reboot-on-panic/configd_update1.cli";
-				configd:delete "/opt/vyatta/share/tmplscripts/system/options/reboot-on-panic/configd_delete1.cli";
+				configd:end 'sysctl -q -w kernel.panic=$(if [ "$VAR(../../options/reboot-on-panic/@)" != "false" -a $VAR(@) == "true" ]; then echo $VAR(../reboot-wait-after-panic/@); else echo 0; fi)';
+			}
+
+			leaf reboot-wait-after-panic {
+				type uint32 {
+					range 1..2147483647;
+				}
+				configd:help "The number of seconds to wait before rebooting after a panic.";
+				description "The number of seconds to wait before rebooting after a panic.";
+				default "60";
+				configd:end 'sysctl -q -w kernel.panic=$(if [ "$VAR(../../options/reboot-on-panic/@)" != "false" -a $VAR(../reboot-on-panic/@) == "true" ]; then echo $VAR(@); else echo 0; fi)';
+			}
+		}
+
+		container options {
+			presence "true";
+			configd:priority "400";
+			configd:help "System options";
+			status deprecated;
+
+			leaf reboot-on-panic {
+				type boolean;
+				configd:help "Reboot system on kernel panic";
+				default "true";
+				configd:update 'sysctl -q -w kernel.panic=$(if [ $VAR(@) == "true" ]; then echo $VAR(../../fault-behavior/reboot-wait-after-panic/@); else echo 0; fi)';
+				configd:delete 'sysctl -q -w kernel.panic=$(if [ "$VAR(../../fault-behavior/reboot-on-panic/@)" == "true" ]; then echo $VAR(../../fault-behavior/reboot-wait-after-panic/@); else echo 0; fi)';
 			}
 		}
 	}

@@ -1,2 +1,0 @@
-#!/opt/vyatta/bin/cliexpr
-update:expression: exec "sh -c \"if [ x$VAR(@) == xfalse ]; then   echo 0 > /proc/sys/kernel/panic; else   echo 60 > /proc/sys/kernel/panic; fi\" "
