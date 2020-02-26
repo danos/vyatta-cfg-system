@@ -1,11 +1,22 @@
 #!/usr/bin/perl
 
+# **** License ****
+#
+# Copyright (c) 2020 AT&T Intellectual Property.
+#   All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# **** End License ****
+
 use strict;
 use warnings;
 use Getopt::Long;
 
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::VrfManager qw(get_vrf_list);
+
 my $SNMPD_CONF_FILE = '/etc/snmp/snmpd.conf';
-my $RSYSLOG_VRF_DIR = '/run/rsyslog/vrf';
 
 my @vrf_list = ();
 my %context_vrf_map;
@@ -78,9 +89,11 @@ sub parse_snmpd_config {
 }
 
 sub get_current_vrfs_list {
-    @vrf_list = glob "$RSYSLOG_VRF_DIR/*";
-    for ( 0 .. $#vrf_list ) {
-        $vrf_list[$_] =~ s/^$RSYSLOG_VRF_DIR\///g;
+    my @vrfs = get_vrf_list();
+    foreach my $vrf ( @vrfs ) {
+        my ( $vrf_name, $vrf_id ) = split( " ", $vrf, 2 );
+        next if ( !defined($vrf_name) );
+        push @vrf_list, $vrf_name;
     }
 }
 
