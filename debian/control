@@ -207,15 +207,31 @@ Description: vyatta-op-show-hardware-v1 module
 
 Package: vyatta-op-reset-system-v1-yang
 Architecture: all
-Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-reset-system-v1 module
  The YANG module for reset system operational commands
+
+Package: vyatta-op-reset-system-login-v1-yang
+Architecture: all
+Breaks: vyatta-op-reset-system-v1-yang (<< 2.29)
+Replaces: vyatta-op-reset-system-v1-yang (<< 2.29)
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-reset-system-login-v1 module
+ The YANG module for reset system login operational commands
 
 Package: vyatta-op-show-system-v1-yang
 Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-show-system-v1 module
  The YANG module for show system operational commands
+
+Package: vyatta-op-show-system-login-v1-yang
+Architecture: all
+Breaks: vyatta-op-show-system-v1-yang (<< 2.29)
+Replaces: vyatta-op-show-system-v1-yang (<< 2.29)
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-login-v1 module
+ The YANG module for show system login operational commands
 
 Package: vyatta-system-platform-v1-yang
 Architecture: all

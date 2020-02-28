@@ -1,3 +1,14 @@
+vyatta-cfg-system (2.29) UNRELEASED; urgency=medium
+
+  [ Paul Carson ]
+  * Support Netconf confirmed commit (Closes: VRVDR-32867)
+
+  [ Charles (Chas) Williams ]
+  * Allow customers to configure more NMIs and panics (Bugfix:
+    VRVDR-49991)
+
+ -- Duncan Eastoe <duncan.eastoe@att.com>  Fri, 28 Feb 2020 19:16:34 +0000
+
 vyatta-cfg-system (2.28) unstable; urgency=medium
 
   [ Sharmila Podury ]
