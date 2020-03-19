@@ -63,7 +63,6 @@ sbin_SCRIPTS += scripts/system-login-information
 sbin_SCRIPTS += scripts/system/vyatta_check_username.pl
 sbin_SCRIPTS += scripts/system/vyatta_check_domainname.pl
 sbin_SCRIPTS += scripts/system/vyatta_create_account
-sbin_SCRIPTS += scripts/system/vyatta_sendtrap_daemonstopped
 sbin_SCRIPTS += scripts/system/vyatta_tally_rpc
 sbin_SCRIPTS += scripts/system/vyatta_update_hosts.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_login.pl
