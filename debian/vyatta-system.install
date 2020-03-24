@@ -9,5 +9,7 @@ debian/vyatta-platform-setup.service /lib/systemd/system/
 debian/vyatta-pre-boot.target /lib/systemd/system/
 scripts/netplug/deladdr.d/rsyslogd /etc/netplug/deladdr.d
 scripts/netplug/newaddr.d/rsyslogd /etc/netplug/newaddr.d
+scripts/netplug/linkup.d/rsyslogd /etc/netplug/linkup.d
+scripts/netplug/linkdown.d/rsyslogd /etc/netplug/linkdown.d
 usr/share/pam-configs/vyatta-pam-tally.template opt/vyatta/share/pam-configs/
 scripts/system-fault-behavior /opt/vyatta/postconfig.d/
