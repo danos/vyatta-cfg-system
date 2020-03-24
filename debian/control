@@ -28,6 +28,12 @@ Build-Depends:
  libarray-utils-perl
 Standards-Version: 3.9.6
 
+Package: vyatta-system-iommu-v1-yang
+Architecture: all
+Depends: vyatta-image-tools, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-iommu-v1 module
+ The YANG module for configuring system IOMMU options.
+
 Package: vyatta-system-journal-v1-yang
 Architecture: all
 Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
