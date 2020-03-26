@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.13) unstable; urgency=medium
+
+  [ Sharmila Podury ]
+  * Shutting down source interface stopping logging is broken
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 26 Mar 2020 14:46:18 +0000
+
 vyatta-cfg-system (2.27.12) unstable; urgency=medium
 
   [ Sharmila Podury ]
