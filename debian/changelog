@@ -1,3 +1,9 @@
+vyatta-cfg-system (2.27.14) unstable; urgency=medium
+
+  * Add system IOMMU configuration (Fixes: VRVDR-50431)
+
+ -- James Wheatley <jammy@att.com>  Tue, 31 Mar 2020 10:24:29 +0100
+
 vyatta-cfg-system (2.27.13) unstable; urgency=medium
 
   [ Sharmila Podury ]
