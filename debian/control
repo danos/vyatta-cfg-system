@@ -269,6 +269,18 @@ Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-show-hardware-cpu-v1 module
  The YANG module for show hardware cpu operational commands
 
+Package: vyatta-op-show-host-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-hardware-cpu-v1 module
+ The YANG module for show host operational commands
+
+Package: vyatta-op-show-host-routing-instance-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-host-routing-instance-v1 module
+ The YANG module for show host lookup routing instance operational command
+
 Package: vyatta-op-show-security-v1-yang
 Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
