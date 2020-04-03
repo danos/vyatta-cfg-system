@@ -1,4 +1,4 @@
-vyatta-cfg-system (2.29) UNRELEASED; urgency=medium
+vyatta-cfg-system (2.29) unstable; urgency=medium
 
   [ Paul Carson ]
   * Support Netconf confirmed commit (Closes: VRVDR-32867)
@@ -7,7 +7,13 @@ vyatta-cfg-system (2.29) UNRELEASED; urgency=medium
   * Allow customers to configure more NMIs and panics (Bugfix:
     VRVDR-49991)
 
- -- Duncan Eastoe <duncan.eastoe@att.com>  Fri, 28 Feb 2020 19:16:34 +0000
+  [ Sharmila Podury ]
+  * Remove sendtrap script from this repo
+
+  [ James Wheatley ]
+  * Add system IOMMU configuration (Fixes: VRVDR-50431)
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 03 Apr 2020 11:47:45 +0100
 
 vyatta-cfg-system (2.28) unstable; urgency=medium
 
