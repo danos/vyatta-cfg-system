@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 #    All Rights Reserved.
 #
 # Copyright (c) 2014-2016, Brocade Communications Systems, Inc.
@@ -140,6 +140,8 @@ sub update_auth_method {
        $chain_prio{$method} = --$method_prio
           unless($chain_prio{$method});
 
+       my $cfg_status = $status;
+
        # disable method if another one got expliclty defined
        if ($single_enforced_method && (!defined($enforce{$method})
 	       || !$enforce{$method})) {
@@ -152,7 +154,8 @@ sub update_auth_method {
 
        # Dynamically invoke update for this type
        my $login    = "Vyatta::Login::$kind";
-       $login->update($status, $chain_prio{$method}, $enforce{$method});
+       $login->update($status, $chain_prio{$method},
+                      $enforce{$method}, $cfg_status);
     }
 }
 if ( defined $system ) {
