@@ -1,3 +1,12 @@
+vyatta-cfg-system (2.29.1) unstable; urgency=medium
+
+  [ Nachiketa Prachanda ]
+  * op: convert show host template to yang-op
+  * yang: add show host lookup routing instance
+  * debian: add show host yang to packages
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 15 Apr 2020 08:05:24 +0100
+
 vyatta-cfg-system (2.29) unstable; urgency=medium
 
   [ Paul Carson ]
