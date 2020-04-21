@@ -36,7 +36,9 @@ Description: vyatta-system-iommu-v1 module
 
 Package: vyatta-system-journal-v1-yang
 Architecture: all
-Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Depends: vyatta-system,
+ vyatta-service-snmp (>= 0.40),
+ ${misc:Depends}, ${yang:Depends}
 Description: YANG root for systemd-journal config in Vyatta vRouter
  The YANG files defining the root of the data model for systemd-journal's
  configuration in the Vyatta Configd CLI, and the export child-node hosting
@@ -163,7 +165,7 @@ Breaks:
  vyatta-cfg-system (<< 1.6.0),
  vyatta-op (<< 1.0),
  vyatta-service-ntp (<< 0.3),
- vyatta-service-snmp (<< 0.5.1),
+ vyatta-service-snmp (<< 0.40),
  vyatta-service-telnet (<< 1.3),
  vyatta-sssd-cfg (<< 0.38),
  vyatta-vrrp (<< 1.1.5)
