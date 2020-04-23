@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.29.2) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * vyatta-system-journal-v1-yang depend on vyatta-service-snmp for
+    vyatta_sendtrap_daemonstopped (Fixes: VRVDR-50774)
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 23 Apr 2020 12:27:38 +0100
+
 vyatta-cfg-system (2.29.1) unstable; urgency=medium
 
   [ Nachiketa Prachanda ]
