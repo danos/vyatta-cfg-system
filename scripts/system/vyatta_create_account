@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -38,9 +38,14 @@ sub create_admin_account {
 	my $login = $xcp->get_node(['system', 'login']);
 	my $loginChildren = $login->{'children'};
     foreach my $child (@$loginChildren) {
-        if ( $child->{'name'} =~ /user vyatta/ ) {
+
+        # admin user to replace in default cfg was vyatta and is now tmpuser
+        if (   $child->{'name'} =~ /user tmpuser/
+            || $child->{'name'} =~ /user vyatta/ )
+        {
             $child->{'name'} = "user $admin";
             $status = 0;
+            last;
         }
     }
 }
