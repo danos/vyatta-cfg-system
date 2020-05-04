@@ -1,0 +1,6 @@
+[D-BUS Service]
+Name=net.vyatta.eng.cpu.history
+Exec=/opt/vyatta/sbin/vyatta-cpu-history-daemon
+User=root
+SystemdService=vyatta-cpu-history-daemon.service
+
