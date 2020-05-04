@@ -5,6 +5,7 @@ debian/modem-getty@.service /lib/systemd/system/
 debian/system-configure.service /lib/systemd/system/
 debian/system-preconfigure.service /lib/systemd/system/
 debian/vyatta-cpu-history-daemon.service /lib/systemd/system/
+debian/net.vyatta.eng.cpu.history.service /usr/share/dbus-1/system-services/
 debian/vyatta-platform-setup.service /lib/systemd/system/
 debian/vyatta-pre-boot.target /lib/systemd/system/
 scripts/netplug/deladdr.d/rsyslogd /etc/netplug/deladdr.d
