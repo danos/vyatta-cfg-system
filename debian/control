@@ -34,16 +34,6 @@ Depends: vyatta-image-tools, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-iommu-v1 module
  The YANG module for configuring system IOMMU options.
 
-Package: vyatta-system-journal-v1-yang
-Architecture: all
-Depends: vyatta-system,
- vyatta-service-snmp (>= 0.40),
- ${misc:Depends}, ${yang:Depends}
-Description: YANG root for systemd-journal config in Vyatta vRouter
- The YANG files defining the root of the data model for systemd-journal's
- configuration in the Vyatta Configd CLI, and the export child-node hosting
- journal log export configuration.
-
 Package: vyatta-system-login-v1-yang
 Architecture: all
 Depends:

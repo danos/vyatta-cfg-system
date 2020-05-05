@@ -23,12 +23,6 @@ override_dh_auto_install:
 	mkdir -p debian/tmp/usr/share
 	mv debian/vyatta-system/usr/share/configd debian/tmp/usr/share
 
-override_dh_install:
-	dh_install
-	mkdir -p debian/vyatta-system-journal-v1-yang/lib/systemd/system/systemd-journald.service.d
-	install --mode=644 debian/vyatta-systemd-journald-snmptrap.conf \
-		debian/vyatta-system-journal-v1-yang/lib/systemd/system/systemd-journald.service.d
-
 override_dh_systemd_start:
 	dh_systemd_start --no-start \
 		debian/clear-system-config.service \

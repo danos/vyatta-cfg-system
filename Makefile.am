@@ -68,7 +68,6 @@ sbin_SCRIPTS += scripts/system/vyatta_update_hosts.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_login.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_resolv.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_console.pl
-sbin_SCRIPTS += scripts/system/vyatta_update_journal.pl
 sbin_SCRIPTS += scripts/system/update_password_quality.pl
 sbin_SCRIPTS += scripts/vyatta-system-nameservers
 sbin_SCRIPTS += scripts/restore-ipv6-address.pl
