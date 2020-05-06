@@ -1,3 +1,29 @@
+vyatta-cfg-system (2.30) unstable; urgency=medium
+
+  [ Nachiketa Prachanda ]
+  * op: convert show host template to yang-op
+  * yang: add show host lookup routing instance
+  * debian: add show host yang to packages
+
+  [ Duncan Eastoe ]
+  * vyatta_update_login: Pass node status to update()
+
+  [ Nicholas Brown ]
+  * vyatta-system-journal-v1-yang depend on vyatta-service-snmp for
+    vyatta_sendtrap_daemonstopped (Fixes: VRVDR-50774)
+
+  [ William Ivory ]
+  * Move YANG deviation file into yang-platform directory (Closes:
+    VRVDR-50742)
+
+  [ Mike Manning ]
+  * Accept tmpuser as default admin user so as to remove vyatta branding
+
+  [ Nicholas Brown ]
+  * Remove journal configuration and yang packages
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 06 May 2020 11:01:40 +0100
+
 vyatta-cfg-system (2.29) unstable; urgency=medium
 
   [ Paul Carson ]
