@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.27.16) unstable; urgency=medium
+
+  [ Sharmila Podury ]
+  * Error: /vyatta-cpu-history-client: GetState failure: Traceback
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 27 May 2020 09:38:50 +0100
+
 vyatta-cfg-system (2.27.15) unstable; urgency=medium
 
   [ Nachiketa Prachanda ]
