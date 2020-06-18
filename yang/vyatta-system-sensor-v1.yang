@@ -20,7 +20,7 @@ module vyatta-system-sensor-v1 {
          Web: www.att.com";
 
     description
-        "Copyright (c) 2018-2019, AT&T Intellectual Property.
+        "Copyright (c) 2018-2020, AT&T Intellectual Property.
          All rights reserved.
 
         Copyright (c) 2018 IETF Trust and the persons identified as the
@@ -34,6 +34,10 @@ module vyatta-system-sensor-v1 {
 
         This version of this YANG module is derived from IETF Draft
         draft-ietf-netmod-entity-08";
+
+    revision 2020-06-17 {
+        description "Add new sensor-value-type amperes.";
+    }
 
     revision 2019-03-01 {
         description "Add new sensor-status notapplicable.";
@@ -96,6 +100,9 @@ module vyatta-system-sensor-v1 {
             }
             enum other {
                 description "A measure other than those listed above.";
+            }
+            enum amperes {
+                description "A measure of electric current";
             }
         }
     }

@@ -148,6 +148,7 @@ class Status(enum.Enum):
 
 class Precision(enum.Enum):
     volts = 3
+    amperes = 3
     celsius = 2
     rpm = 0
 
@@ -163,7 +164,8 @@ def str2units(s):
         'degrees C' : 'celsius',
         'RPM' : 'rpm',
         'V' : 'volts',
-        'Volts' : 'volts'
+        'Volts' : 'volts',
+        'Amps' : 'amperes'
     }
     return d.get(s)
 
