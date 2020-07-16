@@ -473,10 +473,11 @@ Sensor ID              : 12V (0x30)
 def get_index_by_record(record_id):
     get_cmd = ['ipmitool', 'sel', 'get', str(record_id)]
     try:
-        out = str(subprocess.check_output(get_cmd))
+        result = subprocess.run(get_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = str(result.stdout)
     except Exception as e:
         err("failed to load ipmitool sel get command: {}".format(e))
-        return {}
+        return 0
 
     tokens = out.split('Sensor ID')
     try:
