@@ -73,10 +73,10 @@ def show_hardware_sensor_sel():
     c = configd.Client()
 
     try:
-        sels = c.call_rpc_dict("vyatta-system-sensor-v1", "system-event-logs", "{}")
+        sels = c.call_rpc_dict("vyatta-system-sensor-v1", "system-event-logs", {})
 
     except:
-        print(msg="can't retrieve sensor sel information\n", file=sys.stderr)
+        print("can't retrieve sensor sel information\n", file=sys.stderr)
         sys.exit(1)
 
 
