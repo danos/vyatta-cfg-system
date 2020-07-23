@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.29.6) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Handle the case where ipmitool sel get <record-id> does not return the
+    index. Fixes VRVDR-52228
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 23 Jul 2020 09:55:46 +0100
+
 vyatta-cfg-system (2.29.5) unstable; urgency=medium
 
   [ Duncan Eastoe ]
