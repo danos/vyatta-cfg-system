@@ -1,3 +1,9 @@
+vyatta-cfg-system (2.29.7) unstable; urgency=medium
+
+  * Add missing revision statement to DANOS platform deviation yang file
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 28 Jul 2020 17:41:11 +0100
+
 vyatta-cfg-system (2.29.6) unstable; urgency=medium
 
   [ Sameer Agrawal ]
