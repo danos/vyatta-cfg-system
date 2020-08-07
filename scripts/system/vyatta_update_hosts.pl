@@ -4,7 +4,7 @@
 #
 # **** License ****
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2016 Brocade Communications Systems, Inc.
 #    All Rights Reserved.
@@ -81,7 +81,7 @@ my $mail_name;
 my $hosts_line = "127.0.1.1\t ";
 
 if ( !defined $host_name ) {
-    $host_name = 'vyatta';
+    $host_name = 'node';
 }
 $mail_name = $host_name;
 
