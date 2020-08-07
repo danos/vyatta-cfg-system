@@ -20,7 +20,7 @@ module vyatta-system-network-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2019 AT&T Intellectual Property
+		"Copyright (c) 2017-2020 AT&T Intellectual Property
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -56,6 +56,10 @@ module vyatta-system-network-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Global network parameter configuration";
+
+	revision 2020-08-07 {
+		description "Remove default host-name";
+	}
 
 	revision 2019-11-21 {
 		description "Update system static-host-mapping actions";
@@ -171,8 +175,7 @@ module vyatta-system-network-v1 {
 				length "2..63";
 			}
 			configd:priority "100";
-			configd:help "System host name (default: vyatta)";
-			default "vyatta";
+			configd:help "System host name";
 			configd:update "/opt/vyatta/share/tmplscripts/system/host-name/configd_update.sh";
 			configd:delete "/opt/vyatta/share/tmplscripts/system/host-name/configd_delete.sh";
 		}
