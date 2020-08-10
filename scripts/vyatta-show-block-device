@@ -1,0 +1,45 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to output block devices related show commands
+
+import sys
+
+from vyatta import configd
+
+devices_map = [
+    ('name', 'Block device name'),
+    ('current-scheduler', 'Current scheduler'),
+    ('available-schedulers', 'Available schedulers')
+]
+
+
+def show_block_devices(devices):
+    if 'block-device' in devices:
+        for dev in devices['block-device']:
+            for key, value in devices_map:
+                if key == 'available-schedulers':
+                    print("{:<22} : {}".format(value, " ".join(dev[key])))
+                else:
+                    print("{:<22} : {}".format(value, dev[key]))
+            print("\n")
+    else:
+        print("\nNo block devices information found!")
+
+
+if __name__ == "__main__":
+    c = configd.Client()
+
+    try:
+        devices = c.call_rpc_dict("vyatta-system-storage-v1",
+                                  "get-block-device",
+                                  {})
+    except:
+        print("Can't retrieve block device scheduler information\n",
+              file=sys.stderr)
+        sys.exit(1)
+
+    show_block_devices(devices)

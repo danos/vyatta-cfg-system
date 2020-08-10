@@ -303,3 +303,15 @@ Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-fru-v1 module
  The YANG module for retrieving field-replaceable unit (FRU) information
+
+Package: vyatta-op-show-system-storage-v1.yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-storage-v1 module
+ The YANG module for show system storage operational commands
+
+Package: vyatta-system-storage-v1.yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-storage-v1 module
+ The YANG module for retrieving system storage information

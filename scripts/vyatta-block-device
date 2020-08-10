@@ -1,0 +1,214 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to handle block devices scheduler
+
+import os
+import sys
+import json
+
+from vyatta import configd
+
+PROC_PARTITIONS = '/proc/partitions'
+BLOCK_PATH = '/sys/block'
+SCHEDULER_PATH = 'queue/scheduler'
+
+schedulers_map = {
+    'deadline': ['deadline', 'mq-deadline'],
+    'none': ['none', 'no-op']
+    }
+
+
+def err(msg):
+    print(msg, file=sys.stderr)
+
+
+def parse_block_devices():
+    '''
+    Get all block devices by parsing /proc/partitions
+    output and return the list of block devices.
+
+    Sample output:
+        major minor  #blocks  name
+
+        1        0       8192 ram0
+        ...
+        8        0  125034840 sda
+
+    Skip first 2 lines and add the last field, ignoring
+    those are partitions or not a physical block device.
+    '''
+    devices = []
+
+    try:
+        with open(PROC_PARTITIONS, 'r') as r:
+            for line in r:
+                fields = line.split()
+                if fields and not fields[-1][-1].isdigit():
+                    if not fields[-1] == "name":
+                        devices.append(fields[-1])
+    except Exception as e:
+        err("Failed to open /proc/partitions: '{}'".format(e))
+        return []
+    return devices
+
+
+def list_block_devices():
+    '''
+    Print all potential block devices
+    '''
+    devices = parse_block_devices()
+
+    print("\n".join(devices))
+
+
+def get_scheduler_path(name):
+    return os.path.join(BLOCK_PATH, name, SCHEDULER_PATH)
+
+
+def get_schedulers(name):
+    '''
+    Get list of current schedulers for the block device
+    '''
+    path = get_scheduler_path(name)
+    try:
+        with open(path, 'r') as r:
+            out = r.read()
+    except Exception as e:
+        err("Failed to read file output '{}': '{}'".format(path, e))
+        return []
+
+    current_scheduler = out[out.find('[')+1: out.find(']')]
+    schedulers = out.replace('[', '').replace(']', '').split()
+    return current_scheduler, schedulers
+
+
+def update_scheduler(name, scheduler):
+    '''
+    Find the correct scheduler for the specified scheduler
+    and update it for the block device.
+    '''
+    current_scheduler, schedulers = get_schedulers(name)
+
+    if not schedulers:
+        print("\nWARNING: No schedulers found for the device!")
+        return
+
+    # Find the correct scheduler for the block-device
+    if scheduler not in schedulers:
+        scheduler_list = schedulers_map[scheduler]
+        for x in scheduler_list:
+            if x in schedulers:
+                scheduler = x
+                break
+
+    path = get_scheduler_path(name)
+    try:
+        with open(path, 'w') as s:
+            s.write(scheduler)
+    except OSError as exc:
+        if exc.output:
+            print("\nWARNING: Invalid Scheduler type will be ignored!")
+            print(exc.output.strip())
+        else:
+            print(str(exc).strip())
+
+
+def configure_block_device_scheduler():
+    '''
+    Get the block device info from configured tree and configure scheduler.
+    '''
+    cfg = None
+    try:
+        CONFIG_STRING = 'system storage block-device'
+        client = configd.Client()
+        cfg = client.tree_get_dict(CONFIG_STRING)
+    except configd.Exception:
+        pass
+    except Exception as e:
+        print("Failed to get tree on '{}': '{}'".format(CONFIG_STRING, e),
+              file=sys.stderr)
+        sys.exit(1)
+
+    if not cfg:
+        sys.exit(0)
+
+    try:
+        for device in cfg['block-device']:
+            update_scheduler(device['name'], device['scheduler'])
+    except KeyError:
+        pass
+    except Exception as e:
+        print("Failed to configure block device scheduler: '{}'".format(e),
+              file=sys.stderr)
+        sys.exit(1)
+
+
+class Block_Device:
+    '''
+    Block Device Class. Contains a single block device entry
+    '''
+    _attrs = {
+        'name': 'name',
+        'current_scheduler': 'current-scheduler',
+        'available_schedulers': 'available-schedulers'
+    }
+
+    def __init__(self, **kwargs):
+        self.name = "unavailable"
+        self.current_scheduler = 'unavailable'
+        self.available_schedulers = 'unavailable'
+
+        [self.__setattr__(k, kwargs.get(k)) for k in self._attrs.keys()]
+
+    def json_dict(self):
+        return {self._attrs[k]: v for (k, v) in self.__dict__.items()}
+
+    def __str__(self):
+        return "Block-Devices({})".format(str(self.__dict__))
+
+    def __repr__(self):
+        return "Block-Devices({})".format(repr(self.__dict__))
+
+
+def create_block_device_entry(device):
+    '''
+    Creates the block device entry with necessary fields.
+    '''
+    current_scheduler, schedulers = get_schedulers(device)
+
+    fields = {'name': device,
+              'current_scheduler': current_scheduler,
+              'available_schedulers': schedulers
+             }
+
+    s = Block_Device(**fields)
+    return s
+
+
+def get_block_devices():
+    lines = []
+    lines = parse_block_devices()
+
+    devices = []
+    for line in lines:
+        device = create_block_device_entry(line)
+
+        if device is not None:
+            devices.append(device)
+
+    return devices
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "scheduler":
+        configure_block_device_scheduler()
+    elif sys.argv[1] == "list-block-devices":
+        list_block_devices()
+    elif sys.argv[1] == "get-block-devices":
+        jout = [v.json_dict() for v in get_block_devices()]
+        print(json.dumps({'block-device': (jout)}))
+    exit(0)
