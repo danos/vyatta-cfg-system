@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.29.8) unstable; urgency=medium
+
+  [ Paul Atkins ]
+  * remove the siad deviation for configuring NMIs and panics
+
+ -- Paul Carson <paul.carson@intl.att.com>  Thu, 13 Aug 2020 11:50:27 +0100
+
 vyatta-cfg-system (2.29.7) unstable; urgency=medium
 
   * Add missing revision statement to DANOS platform deviation yang file
