@@ -315,3 +315,9 @@ Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-storage-v1 module
  The YANG module for retrieving system storage information
+
+Package: vyatta-op-clear-block-device-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-clear-block-device-v1 module
+ The YANG module for clear block-device operational commands

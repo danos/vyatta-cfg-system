@@ -40,6 +40,7 @@ bin_SCRIPTS  += scripts/encrypt_shadow_passwd
 bin_SCRIPTS  += scripts/show-users-op
 bin_SCRIPTS  += scripts/system/vyatta_tally_op
 bin_SCRIPTS  += scripts/vyatta-block-device
+bin_SCRIPTS  += scripts/vyatta-clear-block-device-op
 bin_SCRIPTS  += scripts/vyatta-conf-sensors
 bin_SCRIPTS  += scripts/vyatta-cpu-summary.pl
 bin_SCRIPTS  += scripts/vyatta-gettime.pl

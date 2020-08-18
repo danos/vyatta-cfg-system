@@ -51,7 +51,7 @@ module vyatta-system-storage-v1 {
 
          The YANG module for vyatta-system-storage-v1";
 
-    revision 2020-07-17 {
+    revision 2020-08-20 {
         description "Initial revision of version 1.";
     }
 
@@ -67,6 +67,30 @@ module vyatta-system-storage-v1 {
             enum none {
                 description "no-op I/O scheduler";
                 configd:help "no-op I/O scheduler";
+            }
+        }
+    }
+
+    typedef interval {
+        description
+            "Interval to discard unused blocks.";
+
+        type enumeration {
+            enum hourly {
+                description "Hourly interval";
+                configd:help "Hourly interval";
+            }
+            enum daily {
+                description "Daily interval";
+                configd:help "Daily interval";
+            }
+            enum weekly {
+                description "Weekly interval";
+                configd:help "Weekly interval";
+            }
+            enum monthly {
+                description "Monthly interval";
+                configd:help "Monthly interval";
             }
         }
     }
@@ -91,6 +115,37 @@ module vyatta-system-storage-v1 {
                     configd:help "Block device scheduler";
                     type scheduler-type;
                 }
+                container discard-unused-blocks {
+                    presence "Enable schedule to discard block-device's unused blocks";
+                    description "Discard unused blocks";
+                    configd:help "Discard unused blocks";
+                    configd:end "vyatta-block-device discard-unused-blocks";
+                    leaf repeat-interval {
+                        description
+                            "Repeat interval to discard unused blocks.
+                             hourly : Discard blocks starting at the next hour.
+                             daily  : Discard blocks daily at the specified start-time (default: 04:00:00).
+                             weekly : Discard blocks every Sunday at the specified start-time (default: 04:00:00).
+                             monthly: Discard blocks every 1st day of the month at the
+                                      specified start-time (default: 04:00:00).";
+                        configd:help "Repeat interval to discard unused blocks";
+                        type interval;
+                        mandatory true;
+                    }
+                    leaf start-time {
+                        description
+                            "Start time (local time) to discard block-device's unused blocks.
+                             For hourly - discard blocks starting at the next hour.
+                             For daily, weekly and monthly - discard blocks at 04:00:00 by default.
+                             Otherwise use the specified start-time value.";
+                        configd:help "Start time to discard block-device's unused blocks";
+                        type string {
+                            pattern "\d{2}:\d{2}(:\d{2})?";
+                            configd:help "Time: <hh:mm:(ss)>";
+                        }
+                        default "04:00:00";
+                    }
+                }
             }
         }
     }
@@ -114,6 +169,24 @@ module vyatta-system-storage-v1 {
                     description "List of available block device schedulers";
                     type string;
                 }
+            }
+        }
+    }
+
+    rpc clear-block-device-unused-blocks {
+        description "Clears the specified block device's unused blocks";
+        configd:call-rpc "vyatta-block-device clear-unused-blocks";
+        input {
+            leaf block-device {
+                description "Block device name";
+                mandatory true;
+                type string;
+            }
+        }
+        output {
+            leaf output {
+                description "Number of bytes trimmed";
+                type string;
             }
         }
     }

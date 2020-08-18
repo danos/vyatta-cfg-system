@@ -1,0 +1,27 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+import sys
+
+from vyatta import configd
+
+if __name__ == "__main__":
+    c = configd.Client()
+
+    try:
+        output = c.call_rpc_dict("vyatta-system-storage-v1",
+                                 "clear-block-device-unused-blocks",
+                                 {"block-device": sys.argv[1]})
+    except:
+        print("Can't clear block device information\n", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        result = output["output"]
+    except KeyError:
+        result = "Unable to fetch output of the clear command"
+
+    print(result)
