@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.31.2) unstable; urgency=medium
+
+  [ Paul Atkins ]
+  * remove the siad deviation for configuring NMIs and panics
+
+ -- Paul Carson <paul.carson@intl.att.com>  Wed, 26 Aug 2020 14:39:38 +0100
+
 vyatta-cfg-system (2.31.1) unstable; urgency=medium
 
   [ Sameer Agrawal ]
