@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+# Copyright (c) 2020, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to handle hardware sensors and sensor event logs.
+
 from datetime import datetime
 import time
 import enum
@@ -15,6 +21,7 @@ HIGHVAL = Decimal(1000000000)
 DIGITS = HIGHVAL.adjusted()
 MAX_SCALE = 6
 MIN_SCALE = -MAX_SCALE
+SENSOR_NAME_INDEX = 0
 
 def err(msg):
     print(msg, file=sys.stderr)
@@ -570,6 +577,65 @@ def get_sel_records():
 
     return (sels)
 
+def update_sensor_thresholds(sensors):
+    '''
+    Update sensor thresholds from the ipmitool sensor output.
+
+    Temp_BMC         | 35.000     | degrees C  | ok    | na        | na        | na        | 86.000    | 90.000    | 95.000
+    Temp_10GPHY      | 39.000     | degrees C  | ok    | na        | na        | na        | 92.000    | 95.000    | 98.000
+    ...
+
+    Read threshold values from column 5 to 10, ignoring which are 'na'.
+    Return the updated sensor records.
+    '''
+
+    thresholds_map = {
+            'lower-non-recoverable': 4,
+            'lower-critical': 5,
+            'lower-non-critical': 6,
+            'upper-non-critical': 7,
+            'upper-critical': 8,
+            'upper-non-recoverable': 9
+        }
+
+    lines = []
+    cmd = ['ipmitool', 'sensor']
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        err("Failed to load ipmitool sensor command: {}".format(e))
+        return sensors
+
+    while(p.poll() is None):
+        line = p.stdout.readline().decode()
+        line = line.strip()
+        if len(line) > 0:
+            lines.append(line)
+
+    for line in lines:
+        record = line.split('|')
+        for sensor in sensors:
+            if record[SENSOR_NAME_INDEX].strip() == sensor['name']:
+                for k,v in thresholds_map.items():
+                    record[v] = record[v].strip()
+                    if record[v] != 'na':
+                        sensor[k] = record[v]
+
+    return sensors
+
+def get_platform_type():
+    cmd = ['/opt/vyatta/bin/vyatta-platform-util', '--what-am-i']
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        out = result.stdout.decode().strip()
+    except Exception as e:
+        err("Failed to get platform type for sensor thresholds: {}".format(e))
+        return 0
+
+    return out
+
 if __name__ == "__main__":
     if (sys.argv[1] == "sensor"):
         sensors = []
@@ -581,6 +647,14 @@ if __name__ == "__main__":
                 sensors.append(sen)
 
         jout = [ v.json_dict() for v in sensors ]
+
+        #By default, the sensor and threhsold values are fetched via sensor
+        #SDR entries. However, incase of S9700 platform, SDR records are
+        #not updated with configured threshold values.
+        #Hence, the sensor thresholds need to be updated another way.
+        if get_platform_type() == "ufi.s9700-53dx":
+            jout = update_sensor_thresholds(jout)
+
         print(json.dumps(jout))
 
     if (sys.argv[1] == "sel"):
