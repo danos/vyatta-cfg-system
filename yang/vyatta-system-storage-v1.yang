@@ -51,7 +51,7 @@ module vyatta-system-storage-v1 {
 
          The YANG module for vyatta-system-storage-v1";
 
-    revision 2020-08-20 {
+    revision 2020-08-31 {
         description "Initial revision of version 1.";
     }
 
@@ -140,7 +140,7 @@ module vyatta-system-storage-v1 {
                              Otherwise use the specified start-time value.";
                         configd:help "Start time to discard block-device's unused blocks";
                         type string {
-                            pattern "\d{2}:\d{2}(:\d{2})?";
+                            pattern '\d{2}:\d{2}(:\d{2})?';
                             configd:help "Time: <hh:mm:(ss)>";
                         }
                         default "04:00:00";
