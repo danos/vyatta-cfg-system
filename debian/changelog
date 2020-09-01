@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.31.3) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Update configured sensor thresholds values in the show command for
+    S9700 platform. VRVDR-51843
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 01 Sep 2020 12:07:21 +0100
+
 vyatta-cfg-system (2.31.2) unstable; urgency=medium
 
   [ Paul Atkins ]
