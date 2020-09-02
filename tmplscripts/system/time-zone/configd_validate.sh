@@ -1,13 +1,10 @@
 #!/bin/bash
-zones=( $(find /usr/share/zoneinfo/posix -type f -follow | sed -e 's:/usr/share/zoneinfo/posix/::') )
 new_zone=$(basename $CONFIGD_PATH)
-new_zone=${new_zone/\%2B/+}
-new_zone=${new_zone/\%2F//}
-for zone in ${zones[@]}; do
-    if [[ $new_zone == $zone ]]; then
-        exit 0
-    fi
-done
+new_zone=${new_zone//\%2B/+}
+new_zone=${new_zone//\%2F//}
+if [ -f /usr/share/zoneinfo/posix/$new_zone ]; then
+    exit 0
+fi
 
 echo "ERROR: $new_zone is not a valid time-zone"
 exit 1
