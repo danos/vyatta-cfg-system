@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.31.4) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Update the pattern to replace all matches found in the time-zone.
+    Fixes VRVDR-52825
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 03 Sep 2020 17:56:47 +0100
+
 vyatta-cfg-system (2.31.3) unstable; urgency=medium
 
   [ Sameer Agrawal ]
