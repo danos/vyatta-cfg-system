@@ -1,3 +1,28 @@
+vyatta-cfg-system (2.32) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Handle the case where ipmitool sel get <record-id> does not return the
+    index. Fixes VRVDR-52228
+
+  [ Mike Manning ]
+  * Default hostname has changed back to vyatta on recent master images
+
+  [ Paul Atkins ]
+  * remove the siad deviation for configuring NMIs and panics
+
+  [ Sameer Agrawal ]
+  * Add ssd scheduler configuration support. VRVDR-50601
+  * Update the package name with correct extension -yang. VRVDR-50601
+  * Add support to configure and discard unused blocks. VRVDR-28443
+  * Update configured sensor thresholds values in the show command for
+    S9700 platform. VRVDR-51843
+  * Use single quotes which fixes the dram warning message. Fixes
+    VRVDR-52816
+  * Update the pattern to replace all matches found in the time-zone.
+    Fixes VRVDR-52825
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 25 Sep 2020 08:53:19 +0100
+
 vyatta-cfg-system (2.31) unstable; urgency=medium
 
   [ Sharmila Podury ]
