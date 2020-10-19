@@ -154,6 +154,8 @@ def update_scheduler(name, scheduler):
     try:
         with open(path, 'w') as s:
             s.write(scheduler)
+            syslog.syslog(syslog.LOG_INFO, 'Updated {} block-device '\
+                    'scheduler to {}'.format(name, scheduler))
     except OSError as exc:
         if exc.output:
             print("\nWARNING: Invalid Scheduler type will be ignored!")
