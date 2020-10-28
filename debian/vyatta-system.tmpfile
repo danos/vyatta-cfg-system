@@ -1,17 +1,17 @@
 #Type Path Mode UID GID Age Argument
-d /var/run/vyatta 0775 root vyattacfg -
+d /run/vyatta 0775 root vyattacfg -
 d /var/log/vyatta 0775 root vyattacfg -
 
 # clear_or_override_config_files
 F! /etc/resolv.conf 0644 root root -
 
-R! /var/run/vyatta/ipv6_no_fwd.*
-R! /var/run/vyatta/ipv6_disable.*
+R! /run/vyatta/ipv6_no_fwd.*
+R! /run/vyatta/ipv6_disable.*
 
 r! /etc/profile.d/autologout.sh
 
 # remove any interface stat clears
-r! /var/run/vyatta/*.stats
+r! /run/vyatta/*.stats
 
 # Remove links from the post-commit hooks directory.
 # note that this approach only supports hooks that are "configured",
