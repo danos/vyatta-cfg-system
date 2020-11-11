@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# Copyright (c) 2018-2020 AT&T Intellectual Property.
 #   All Rights Reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -19,16 +19,16 @@ use JSON;
 
 use lib "/opt/vyatta/share/perl5";
 use Vyatta::Configd;
+use IPC::Run3;
 
 sub tally_reset_user_rpc {
     my $in    = do { local $/; <> };
     my $input = decode_json($in);
     my $user  = $input->{'user'};
 
-    my $ret = system("pam_tally --reset --user $user &>/dev/null");
-    if ($ret < 0) {
-        die "failed to spwan sub process\n";
-    }
+    my @cmd= ("pam_tally", "--reset", "--user", $user);
+    die "failed to spwan sub process\n"
+      unless run3( \@cmd, \undef, \undef, \undef );
     print encode_json({});
 }
 

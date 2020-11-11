@@ -4,7 +4,7 @@
 #
 # **** License ****
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020,  AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014, 2016 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -26,6 +26,7 @@ use warnings;
 
 use File::Slurp qw(read_file);
 use POSIX qw(uname);
+use IPC::Run3;
 
 #
 # Global hash of debians in the base install and now.
@@ -213,7 +214,7 @@ sub show_deleted {
 sub show_upgraded_downgraded {
     my ($up_down) = @_;
 
-    my ( $symbol, $op, $ver_base, $ver_now, $cmd );
+    my ( $symbol, $op, $ver_base, $ver_now, @cmd );
     if ( $up_down eq "upgraded" ) {
         $symbol = "U";
         $op     = "lt";
@@ -227,8 +228,8 @@ sub show_upgraded_downgraded {
             $ver_base = $rHoH_base_debs->{$name}{'version'};
             $ver_now  = $rHoH_now_debs->{$name}{'version'};
             if ( $ver_base ne $ver_now ) {
-                $cmd = "dpkg --compare-versions \"$ver_base\" $op \"$ver_now\"";
-                if ( !system($cmd) ) {
+                @cmd = ("dpkg", "--compare-versions", $ver_base, $op, $ver_now);
+                if ( run3( \@cmd, \undef, undef, undef ) ) {
                     printf( "%sii %-25s %-20s (baseline: %s)\n",
                         $symbol, $name, $ver_now, $ver_base );
                 }

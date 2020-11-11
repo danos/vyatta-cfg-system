@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 # **** License ****
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -16,6 +16,7 @@ use lib "/opt/vyatta/share/perl5/";
 use Vyatta::Config;
 use strict;
 use Getopt::Long;
+use IPC::Run3;
 
 my ( $resync, $verbose, $force, $check );
 
@@ -39,12 +40,14 @@ GetOptions(
 #          before any changes will take effect.
 sub set_user_attr {
   my $user = shift;
-  system('/usr/bin/cfgcli', 'set', 'system', 'login', 'user', $user, @_);
+  my @cmd = ('/usr/bin/cfgcli', 'set', 'system', 'login', 'user', $user, @_);
+  run3( \@cmd, \undef, undef, undef );
 }
 
 sub del_user {
   my $user = shift;
-  system('/usr/bin/cfgcli', 'delete', 'system', 'login', 'user', $user);
+  my @cmd = ('/usr/bin/cfgcli', 'delete', 'system', 'login', 'user', $user);
+  run3( \@cmd, \undef, undef, undef );
 }
 
 my $members;

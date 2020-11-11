@@ -3,7 +3,7 @@
 # Module: vyatta_update_resolv.pl
 #
 # **** License ****
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -28,6 +28,7 @@ use lib "/opt/vyatta/share/perl5/";
 use Vyatta::Config;
 
 use Getopt::Long;
+use IPC::Run3;
 
 my $has_vrf;
 
@@ -214,8 +215,8 @@ if ($dhclient_script == 1) {
   }
   if ($#current_dhcp_nameservers < 0) {
     for my $dhcpnameserver (@dhcp_nameservers_in_resolvconf) {
-        my $cmd = "sed -i '/$dhcpnameserver/d' $resolv_conf_path";
-        system($cmd);
+        my $cmd = ["sed", "-i", "'/$dhcpnameserver/d'", $resolv_conf_path];
+        run3( $cmd, \undef, undef, undef );
         $restart_ntp = 1;
     }
   } else {
@@ -227,8 +228,8 @@ if ($dhclient_script == 1) {
                }
             }
             if ($found == 0) {
-              my $cmd = "sed -i '/$dhcpnameserver/d' $resolv_conf_path";
-              system($cmd);
+              my $cmd = ["sed", "-i", "'/$dhcpnameserver/d'", $resolv_conf_path];
+              run3( $cmd, \undef, undef, undef );
               $restart_ntp = 1;
             }
 
