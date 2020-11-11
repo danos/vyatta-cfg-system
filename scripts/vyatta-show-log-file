@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 use File::Spec::Functions;
+use IPC::Run3;
 
 sub show_log_file {
     my ( $log_dir, $filename ) = @_;
@@ -25,7 +26,7 @@ sub show_log_file {
         if ( $fname =~ /.gz/ ) {
            $cmd = "zcat";
         }
-        system("$cmd $fname");
+        run3( [$cmd, $fname], \undef, undef, undef );
         $found = 1;
     }
 

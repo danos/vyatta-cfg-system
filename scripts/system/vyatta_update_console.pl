@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2016 Brocade Communications Systems, Inc.
 #    All Rights Reserved.
@@ -28,6 +28,7 @@ use File::Compare;
 use File::Copy;
 use File::Temp qw/ tempfile /;
 use File::Path qw(make_path remove_tree);
+use IPC::Run3;
 
 my $BASE_ENVIRONMENT_DIR = "/etc";
 
@@ -164,7 +165,9 @@ sub update_getty {
     my $new_environment = create_environment_file( $dev_type, $device, $speed );
     my $running = getty_is_running( $getty, $cur_gettys, $cur_modem_gettys );
     return if ( $running && !$new_environment );
-    system("systemctl --no-block restart $dev_type-getty\@$device.service");
+    my @cmd = ("systemctl", "--no-block", "restart",
+               "$dev_type-getty\@$device.service");
+    run3( \@cmd, \undef, undef, undef );
 }
 
 sub update_systemd {
@@ -184,7 +187,8 @@ sub update_systemd {
         next if exists( $cmdline_gettys{$tty_unit} );
 
         # stop the unconfigured device
-        system("systemctl --no-block stop $tty_unit");
+        my @cmd = ("systemctl", "--no-block", "stop", $tty_unit);
+        run3( \@cmd, \undef, undef, undef );
 
         # remove the environment file
         my ($dev_type) = $tty_unit =~ m/^(.*)-/;
@@ -195,8 +199,8 @@ sub update_systemd {
 }
 
 sub update_inittab {
-    return update_systemd()
-      if system('grep -w -q systemd /proc/1/comm') == 0;
+    $comm = read_file('/proc/1/comm');
+    return update_systemd() if ($comm and ($comm =~ /systemd/));
 
     open( my $inittab, '<', $INITTAB )
       or die "Can't open $INITTAB: $!";
@@ -258,21 +262,27 @@ sub update_grub_env {
 
 sub set_boot_console {
     my ( $console, $unit, $speed ) = @_;
+    my @cmd = ();
 
     return unless ( -w '/boot/grub/grubenv' );
 
-    system("grub-editenv - set boot_console=$console");
+    @cmd = ("grub-editenv", "-", "set", "boot_console=$console");
+    run3( \@cmd, \undef, undef, undef );
     if ( defined $unit ) {
-        system("grub-editenv - set serial_unit=$unit");
+        @cmd = ("grub-editenv", "-", "set", "serial_unit=$unit");
+        run3( \@cmd, \undef, undef, undef );
     }
     else {
-        system("grub-editenv - unset serial_unit");
+        @cmd = ("grub-editenv", "-", "unset", "serial_unit");
+        run3( \@cmd, \undef, undef, undef );
     }
     if ( defined $speed ) {
-        system("grub-editenv - set serial_speed=$speed");
+        @cmd = ("grub-editenv", "-", "set", "serial_speed=$speed");
+        run3( \@cmd, \undef, undef, undef );
     }
     else {
-        system("grub-editenv - unset serial_speed");
+        @cmd = ("grub-editenv", "-", "unset", "serial_speed");
+        run3( \@cmd, \undef, undef, undef );
     }
 }
 

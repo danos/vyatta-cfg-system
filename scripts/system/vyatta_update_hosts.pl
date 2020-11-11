@@ -31,6 +31,8 @@ use File::Temp qw(tempfile);
 use Vyatta::File qw(touch);
 use Vyatta::Config;
 use Getopt::Long;
+use IPC::Run3;
+use File::Copy;
 
 my $HOSTS_CFG;
 my $HOSTS_TMPL       = "/tmp/hosts.XXXXXX";
@@ -40,7 +42,7 @@ my $restart_services = 1;
 
 sub set_hostname {
     my ($hostname) = @_;
-    system( "hostname", $hostname );
+    run3( ["hostname", $hostname], \undef, undef, undef );
     open( my $f, '>', $HOSTNAME_CFG )
       or die("$0:  Error!  Unable to open $HOSTNAME_CFG for output: $!\n");
     print $f "$hostname\n";
@@ -90,7 +92,7 @@ if ( defined $domain_name ) {
     $hosts_line .= $host_name . '.' . $domain_name;
     if ( !$vrf_name ) {
         $mail_name .= '.' . $domain_name;
-        system( "domainname", $domain_name );
+        run3( ["domainname", $domain_name], \undef, undef, undef );
     }
 }
 $hosts_line .= " $host_name\t #vyatta entry\n";
@@ -115,8 +117,8 @@ print $out $hosts_line;
 close($in);
 close($out);
 
-system( "cp", $tempname, $HOSTS_CFG ) == 0
-  or die "Can't copy $tempname to $HOSTS_CFG: $!";
+copy($tempname, $HOSTS_CFG)
+  or die "Can't copy $tempname to $HOSTS_CFG";
 
 set_hostname $host_name;
 set_mailname $mail_name;
@@ -125,10 +127,12 @@ set_mailname $mail_name;
 # add more ase needed.
 if ($restart_services) {
     if ($vrf_name) {
-        system( "systemctl", "reload-or-restart", "rsyslog\@$vrf_name" )
+        my @cmd = ("systemctl", "reload-or-restart", "rsyslog\@$vrf_name");
+        run3( \@cmd, \undef, undef, undef )
           if ( -d "/run/rsyslog/vrf/$vrf_name" );
     } else {
-        system("systemctl reload-or-restart rsyslog");
+        my @cmd = ("systemctl", "reload-or-restart", "rsyslog");
+        run3( \@cmd, \undef, undef, undef );
     }
-    system("systemctl condrestart snmpd");
+    run3( ["systemctl", "condrestart", "snmpd"], \undef, undef, undef );
 }

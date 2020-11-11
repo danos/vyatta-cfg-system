@@ -4,7 +4,7 @@
 #
 # **** License ****
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -28,6 +28,8 @@ use Getopt::Long;
 use POSIX;
 use IO::Prompt;
 use Sys::Syslog qw(:standard :macros);
+use IPC::Run3;
+use File::Slurp qw( write_file );
 
 use strict;
 use warnings;
@@ -60,8 +62,8 @@ sub cancel_shutdown {
     close ($file);
 
     chomp $job;
-    system("atrm $job") == 0
-        or die "Unable to 'atrm $job'";
+    die "Unable to 'atrm $job'"
+      unless run3( ["atrm", $job], \undef, \undef, \undef );
     unlink("$job_file")
         or print "Warning: failed to delete $job_file\n";
     syslog("warning", "Shutdown scheduled for [$time] - CANCELED by $login");
@@ -224,8 +226,8 @@ sub do_shutdown_at {
         print "Invalid time format [$at_time]\n";
         return 1;
     }
-    system("atrm $job") == 0
-        or die "Unable to 'atrm $job'";
+    die "Unable to 'atrm $job'"
+      unless run3( ["atrm", $job], \undef, \undef, \undef );
 
     $action =~ /(.*)_at/; $action = $1;
 
@@ -247,8 +249,8 @@ sub do_shutdown_at {
 
     # Save job file.
     my $job_file = $action eq "poweroff" ? $poweroff_job_file : $reboot_job_file;
-    system("echo $job > $job_file") == 0
-        or die ucfirst($action), " scheduled, but unable to write to $job_file";
+    die ucfirst($action), " scheduled, but unable to write to $job_file"
+      unless write_file($job_file, $job) == 1;
 
     print "\n".ucfirst($action)." scheduled for $time\n";
     syslog("warning", ucfirst($action)." scheduled for [$time] by $login");

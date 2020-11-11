@@ -2,7 +2,7 @@
 # Restore IPv6 addresses from configuration when
 # interface is re-enabled
 #
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -17,6 +17,7 @@ use File::Slurp;
 use Vyatta::Address;
 use Vyatta::Config;
 use Vyatta::Interface;
+use IPC::Run3;
 
 sub restore_link_local;
 sub restore_global;
@@ -89,7 +90,8 @@ sub restore_link_local {
 
         # If link-local address is configured, update it before waiting for DAD
         my $lladdr = $config->returnValue('ipv6 address link-local');
-        system("vyatta-ipv6-link-local.pl --update $name $lladdr") if ($lladdr);
+        my @cmd = ("vyatta-ipv6-link-local.pl", "--update", $name, $lladdr);
+        run3( \@cmd, \undef, undef, undef ) if ($lladdr);
         restore_link_local_on_sub_intfs( $name, $config );
     }
 }
@@ -114,6 +116,7 @@ sub restore_global_on_sub_intfs {
 # Restore global addresses on list of interfaces
 sub restore_global {
     my ($args) = @_;
+    my @cmd = ();
     foreach my $name ( @{ $args->{interfaces} } ) {
         my $disabled = ipv6_disabled($name);
         next if !defined($disabled);
@@ -145,11 +148,13 @@ sub restore_global {
 
         foreach my $eui ( $config->returnValues('ipv6 address eui64') ) {
             if ( $args->{old_mac} ) {
-                system(
-                    "vyatta-ipv6-eui64.pl --delete $name $eui $args->{old_mac}"
-                );
+                @cmd = ("vyatta-ipv6-eui64.pl", "--delete",
+                        $name, $eui, $args->{old_mac});
+                run3( \@cmd, \undef, undef, undef );
             }
-            system("/opt/vyatta/sbin/vyatta-ipv6-eui64.pl --create $name $eui");
+            @cmd = ("/opt/vyatta/sbin/vyatta-ipv6-eui64.pl",
+                    "--create", $name, $eui);
+            run3( \@cmd, \undef, undef, undef );
         }
 
         restore_global_on_sub_intfs( $name, $config, $args );

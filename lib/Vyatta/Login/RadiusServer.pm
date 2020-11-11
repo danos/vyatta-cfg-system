@@ -1,6 +1,6 @@
 # **** License ****
 #
-# Copyright (c) 2017,2019, 2018 AT&T Intellectual Property.
+# Copyright (c) 2017-2020 AT&T Intellectual Property.
 #    All Rights Reserved.
 # Copyright (c) 2014, 2016 Brocade Communications Systems, Inc.
 #    All Rights Reserved.
@@ -22,6 +22,7 @@ use Vyatta::Config;
 use File::Compare;
 use File::Copy;
 use Module::Load::Conditional qw[can_load];
+use IPC::Run3;
 
 my $vrf_available = can_load( modules => { "Vyatta::VrfManager" => undef }, 
         autoload => "true" );
@@ -36,9 +37,11 @@ my $RAD_DEF_CFG = "system login radius-server";
 my $BASE_VRF_CFG = "routing routing-instance";
 
 sub remove_pam_radius {
-    system("DEBIAN_FRONTEND=noninteractive " .
-	   " pam-auth-update --package --remove radius") == 0
-	or die "pam-auth-update remove failed";
+    $ENV{"DEBIAN_FRONTEND"} = "noninteractive";
+    my @cmd = ("pam-auth-update", "-package", "--remove", "radius");
+    die "pam-auth-update remove failed"
+      unless run3( \@cmd, \undef, undef, undef );
+    delete $ENV{"DEBIAN_FRONTEND"};
 
     unlink($PAM_RAD_AUTH)
 	or die "Can't remove $PAM_RAD_AUTH";
@@ -48,9 +51,11 @@ sub add_pam_radius {
     copy($PAM_RAD_SYSCONF,$PAM_RAD_AUTH)
 	or die "Can't copy $PAM_RAD_SYSCONF to $PAM_RAD_AUTH";
 
-    system("DEBIAN_FRONTEND=noninteractive " .
-	   "pam-auth-update --package radius") == 0
-	or die "pam-auth-update add failed"
+    $ENV{"DEBIAN_FRONTEND"} = "noninteractive";
+    my @cmd = ("pam-auth-update", "-package", "radius");
+    die "pam-auth-update add failed"
+      unless run3( \@cmd, \undef, undef, undef );
+    delete $ENV{"DEBIAN_FRONTEND"};
 }
 
 sub update {
@@ -96,8 +101,13 @@ sub update {
 	        my $timeout = $rconfig->returnValue("$server timeout");
 	        # in version 1.4 there's a new parameter, source_ip
 	        my $src_ip = "";
-	        if (system("dpkg --compare-versions \`dpkg-query -W -f='\${Version}' libpam-radius-auth\` ge 1.4") == "0") {
+	        my @cmd = ("dpkg-query", "-W", "-f='\${Version}'", "libpam-radius-auth");
+	        my $stdout;
+	        if ( run3( \@cmd, \undef, \$stdout, \undef ) ) {
+	            @cmd = ("dpkg", "--compare-versions", "$stdout", "ge", "1.4");
+	            if (run3( \@cmd, \undef, undef, undef )) {
 	                $src_ip = "0";
+	            }
 	        }
 	        print $cfg "$server:$port\t$secret\t$timeout\t$src_ip\t$vrfId\n";
 	        ++$count;

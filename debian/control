@@ -9,6 +9,7 @@ Build-Depends:
  dh-yang,
  libfile-slurp-perl,
  libfile-temp-perl,
+ libipc-run3-perl,
  libnetaddr-ip-perl,
  libtest-mockobject-perl,
  pylint3,

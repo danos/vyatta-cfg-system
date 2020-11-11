@@ -1,5 +1,5 @@
 # **** License ****
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 # All Rights Reserved.
 #
 # Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -18,6 +18,7 @@ use strict;
 use warnings;
 use lib "/opt/vyatta/share/perl5";
 use JSON;
+use IPC::Run3;
 
 use constant {
     ADD_OR_CHANGE => 0,
@@ -109,6 +110,8 @@ sub _delete_user {
     my $user  = shift;
     my $sid   = $ENV{VYATTA_CONFIG_SID};
     my $login;
+    my $result;
+    my @cmd = ();
     $login = qx(ps -h -o user -p $sid 2> /dev/null) if defined $sid;
 
     chomp($login) if defined($login);
@@ -116,8 +119,11 @@ sub _delete_user {
     $login = getlogin() unless length($login);
     if ( $user eq 'root' ) {
         warn "Disabling root account, instead of deleting\n";
-        system('usermod -p ! root') == 0
-          or die "usermod of root failed: $?\n";
+        @cmd = ('usermod', '-p', '!', 'root');
+        run3( \@cmd, \undef, \undef, \$result );
+        if ( $result and $result ne "" ) {
+            die "usermod of root failed: $result\n";
+        }
     } elsif ( defined($login) && $login eq $user ) {
         warn "Attempting to delete current user: $user\n"
           . "Not removing user from system to avoid unintentional lockout.\n"
@@ -125,18 +131,20 @@ sub _delete_user {
     } elsif ( getpwnam($user) ) {
         if ( `who | grep "^$user"` ne '' ) {
             warn "$user is logged in, forcing logout\n";
-            system("pkill -HUP -u $user");
+            run3( ["pkill", "-HUP", "-u", $user], \undef, undef, undef );
         }
-        system("pkill -9 -u $user");
-        system("pam_tally --user $user --reset --quiet");
+        run3( ["pkill", "-9", "-u", $user], \undef, undef, undef );
+        my @cmd = ("pam_tally", "--user", $user, "--reset", "--quiet");
+        run3( \@cmd, \undef, undef, undef );
 
         # check and cleanup sandbox
         my $svc = "cli-sandbox\@${user}.service";
-        system('systemctl', 'stop', ${svc})
-          if ( system('systemctl', '-q', 'is-active', ${svc}) == 0 );
+        @cmd = ("systemctl", "-q", "is-active", ${svc});
+        run3( ["systemctl", "stop", ${svc}], \undef, undef, undef )
+          if ( run3( \@cmd, \undef, undef, undef ) );
 
-        system("userdel --remove $user 2>/dev/null") == 0
-          or die "userdel of $user failed: $?\n";
+        die "userdel of $user failed: $?\n"
+          unless run3( ["userdel", "--remove", $user], \undef, \undef, \undef );
     }
     return;
 }
@@ -147,6 +155,7 @@ sub _update_user {
     die "Missing input: config" unless defined $tree;
 
     my ($pwd, $level, $fname, $home, $group);
+    my $result;
 
     $pwd = $tree->{'authentication'}->{'encrypted-password'}
       if defined $tree->{'authentication'}->{'encrypted-password'};
@@ -178,45 +187,46 @@ sub _update_user {
     my $uid = getpwnam($user);
 
     # not found in existing passwd, must be new
-    my $cmd = "";
+    my @cmd = ();
     unless ( defined($uid) ) {
         #  make new user using vyatta shell
         #  and make home directory (-m)
         #  and with default group of 100 (users)
-        $cmd = 'useradd -m -N';
+        @cmd = ('useradd', '-m', '-N');
     } else {
         # update existing account
-        $cmd = "usermod -m";
+        @cmd = ('usermod', '-m');
     }
 
-    $cmd .= " -s /bin/vbash";
+    push(@cmd, '-s', '/bin/vbash');
     if ($pwd) {
-        $cmd .= " -p '$pwd'";
+        push(@cmd, '-p', $pwd);
     } else {
         unless ( defined($uid) ) {
             # This is a useradd, the default is to lock the password.
         } else {
             # No password, lock the account
-            $cmd .= " -L ";
+            push(@cmd, '-L');
         }
     }
-    $cmd .= " -c \"$fname\"" if ( defined $fname );
+    push(@cmd, '-c', $fname) if ( defined $fname );
+
     if ( defined $home ) {
-        $cmd .= " -d \"$home\"";
+        push(@cmd, '-d', $home);
     }
     else {
         if ( defined($uid) && $uid == 0 ) {
-            $cmd .= " -d \"/root\"";
+            push(@cmd, '-d', '/root');
         }
         else {
-            $cmd .= " -d \"/home/$user\"";
+            push(@cmd, '-d', "/home/$user");
         }
     }
-    $cmd .= ' -G ' . join( ',', @groups );
-    system("$cmd $user");
-
-    die "Attempt to change user $user failed\n"
-      unless ( $? == 0 );
+    push(@cmd, '-G', join( ',', @groups), $user);
+    run3( \@cmd, \undef, \undef, \$result);
+    if ( $result and $result ne "") {
+        die "Attempt to change user $user failed: $result\n";
+    }
     return;
 }
 
