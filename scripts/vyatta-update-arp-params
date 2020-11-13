@@ -1,9 +1,9 @@
-#!/bin/bash
+#! /usr/bin/perl
 #
 # Module: vyatta-update-arp-params
 #
 # **** License ****
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 # Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
 # All rights reserved.
 #
@@ -20,74 +20,116 @@
 # **** End License ****
 #
 
-#
-# subroutines
-#
+use strict;
+use warnings;
+use lib "/opt/vyatta/share/perl5";
+use Getopt::Long;
+use Vyatta::Configd;
+use Vyatta::VPlaned;
 
-print_usage()
-{
-    echo "Usage:"
-    echo -e "\t$0 update <type of arp parameter> <value of arp parameter> {ipv4/ipv6}"
+my %dp_arp_params = (
+    'stale-time' => 'stale-time',
+    'table-size' => 'max-entry'
+);
+my $arp_node = "arp";
+my $arp_path = "system ip $arp_node";
+my $arp_prot = "arp";
+
+my %dp_nd_params = (
+    'resolution-throttling' => 'res-token',
+    'table-size'            => 'max-entry'
+);
+my $nd_node = "neighbor";
+my $nd_path = "system ipv6 $nd_node";
+my $nd_prot = "nd6";
+
+my $def_max_table_size = 8192;
+
+sub set_dp_param {
+    my ( $prot, $action, $dp_param, $value, $dev ) = @_;
+    my $cstore = new Vyatta::VPlaned;
+
+    $dev = "all" unless $dev;
+    if ( !defined($value) ) {
+        $value  = "";
+        $action = "DELETE";
+    }
+    $cstore->store(
+        "$prot $dev $dp_param",
+        "$prot " . lc($action) . " $dev $dp_param $value",
+        $dev, $action
+    );
+    return;
 }
 
-set_table_thresholds() {
-    local ip_type=$1
-    local arp_value=$2
-    local softmax=$((arp_value / 2));
-    local min=$((arp_value / 8));
-    sysctl -q "net.$ip_type.neigh.default.gc_thresh3=$arp_value"
-    sysctl -q "net.$ip_type.neigh.default.gc_thresh2=$softmax"
-    sysctl -q "net.$ip_type.neigh.default.gc_thresh1=$min"
+sub set_kernel_gc_thresholds {
+    use integer;
+    my ( $ip, $arp_value ) = @_;
+    my $soft_max = $arp_value / 2;
+    my $min      = $arp_value / 8;
+    system("sysctl -q net.$ip.neigh.default.gc_thresh3=$arp_value");
+    system("sysctl -q net.$ip.neigh.default.gc_thresh2=$soft_max");
+    system("sysctl -q net.$ip.neigh.default.gc_thresh1=$min");
+    return;
 }
 
-update_arp_param ()
-{
- local arp_type=$2
- local arp_value=$3
- local ip_type=$4
- case "$arp_type" in
-
-     table-size)
-        # Apply default for delete action, which only occurs when parent node removed
-        if [ "$1" == "delete" ]; then
-            arp_value=8192
-        fi
-
-        # Kernel configuration
-        set_table_thresholds "$ip_type" "$arp_value"
-
-        # Dataplane configuration
-        if [ "$ip_type" == "ipv6" ]; then
-            /opt/vyatta/sbin/nbr-res-cfg.pl --action=SET --param=max-entry --value="$arp_value" --ipv6
-        fi
-        ;;
-
-     *)
-         echo "Invalid arp parameter $arp_type to update"
-        ;;
- esac
+sub usage {
+    print "Usage: $0 --action={SET|ACTIVE|DELETE} [--param=<param-name>] ",
+      "[--value=<value>] [--dev=<interface>] [--ipv6]\n";
+    exit 1;
 }
 
-#
-# main
-#
+my ( $action, $ipv6, $param_in, $value_in, $dev );
 
-case "$1" in
-    update|delete)
-        if [ $# -ne 4 ]; then
-                print_usage
-                exit 1
-        fi
-        update_arp_param "$1" "$2" "$3" "$4"
-        ;;
+GetOptions(
+    "action=s" => \$action,
+    "param=s"  => \$param_in,
+    "value=s"  => \$value_in,
+    "dev=s"    => \$dev,
+    "ipv6"     => \$ipv6,
+) or usage();
 
-    *)
-        print_usage
-        exit 1
-        ;;
+$action = $ENV{COMMIT_ACTION} unless $action;
+usage() unless $action && grep { $_ eq $action } ( "SET", "ACTIVE", "DELETE" );
+$action = "SET" unless $action eq "DELETE";
 
-esac
+my ( $ip, $node, $path, $prot, %dp_params );
 
-exit 0
+if ($ipv6) {
+    ( $ip, $node, $path, $prot, %dp_params ) =
+      ( "ipv6", $nd_node, $nd_path, $nd_prot, %dp_nd_params );
+} else {
+    ( $ip, $node, $path, $prot, %dp_params ) =
+      ( "ipv4", $arp_node, $arp_path, $arp_prot, %dp_arp_params );
+}
 
-# end of file
+my @params = sort( keys %dp_params );
+my ( $config, $value );
+
+if ( defined($param_in) ) {
+    usage() unless grep { $_ eq $param_in } @params;
+    usage() if !defined($value_in) && $action eq "SET";
+    @params = ($param_in);
+} else {
+    my $client = Vyatta::Configd::Client->new();
+    $config = $client->tree_get_hash($path)
+      if $client->node_exists( $Vyatta::Configd::Client::AUTO, $path );
+}
+
+for my $param (@params) {
+
+    # Resolution throttling is only available in the dataplane
+    if ( $param eq "resolution-throttling" ) {
+        $value = $config ? $config->{$node}->{$param} : $value_in;
+        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+    }
+
+    # Table size applies to both dataplane and kernel
+    # Apply default for delete action, needed when parent node removed
+    elsif ( $param eq "table-size" ) {
+        $value = $config ? $config->{$node}->{$param} : $value_in;
+        $value = $def_max_table_size unless defined($value) && $action eq "SET";
+        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+        set_kernel_gc_thresholds( $ip, $value );
+    }
+}

@@ -57,6 +57,10 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2020-11-12 {
+		description "Modify actions for ND";
+	}
+
 	revision 2020-08-07 {
 		description "Remove default host-name";
 	}
@@ -262,8 +266,8 @@ module vyatta-system-network-v1 {
 					}
 					configd:help "Maximum number of entries to keep in the Neighbor cache (default: 8192)";
 					default "8192";
-					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params update table-size $VAR(@) ipv6";
-					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params delete table-size $VAR(@) ipv6";
+					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=table-size --value=$VAR(@) --ipv6";
+					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params --action=DELETE --param=table-size --value=$VAR(@) --ipv6";
 				}
 				leaf resolution-throttling {
 					type int16 {
@@ -272,8 +276,8 @@ module vyatta-system-network-v1 {
 					}
 					description "Maximum number of pending resolutions";
 					configd:help "Maximum number of pending resolutions (default: 100)";
-					configd:update "/opt/vyatta/sbin/nbr-res-cfg.pl --param=res-token --value=$VAR(@) --ipv6";
-					configd:delete "/opt/vyatta/sbin/nbr-res-cfg.pl --param=res-token --ipv6";
+					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=resolution-throttling --value=$VAR(@) --ipv6";
+					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params --action=DELETE --param=resolution-throttling --value=$VAR(@) --ipv6";
 				}
 			}
 			leaf disable-forwarding {
