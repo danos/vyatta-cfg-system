@@ -142,10 +142,16 @@ sub restore_global {
             next if Vyatta::Address::is_ipv4($addr);
             my $result = qx(ip -6 addr add $addr dev $name 2>&1);
             if ( $? && index( $result, "File exists" ) == -1 ) {
-                warn "restore $addr on $name failed ($result)\n";
+
+                # IPv6 re-disabled if DAD failed for the LL with strict-dad cfg
+                if ( ipv6_disabled($name) ) {
+                    print "Warning: IPv6 addresses on $name not restored.\n"
+                      . "         Check if IPv6 is disabled due to strict DAD.\n";
+                    last;
+                }
+                print "Warning: restore $addr on $name failed ($result)\n";
             }
         }
-
         foreach my $eui ( $config->returnValues('ipv6 address eui64') ) {
             if ( $args->{old_mac} ) {
                 @cmd = ("vyatta-ipv6-eui64.pl", "--delete",
