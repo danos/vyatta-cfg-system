@@ -491,6 +491,13 @@ def configure_discard_unused_blocks_schedule():
     for device in deleted:
         delete_discard_unused_blocks_schedule(device)
 
+def validate_discard_unused_blocks_start_time(start_time):
+    timeformat = "%H:%M:%S"
+    try:
+        datetime.strptime(start_time, timeformat)
+    except Exception as e:
+        err("Invalid time specified: {}".format(e))
+        sys.exit(1)
 
 if __name__ == "__main__":
     if sys.argv[1] == "scheduler":
@@ -508,5 +515,7 @@ if __name__ == "__main__":
             clear_unused_blocks(sys.argv[2])
     elif sys.argv[1] == "discard-unused-blocks":
         configure_discard_unused_blocks_schedule()
+    elif sys.argv[1] == "validate-time":
+        validate_discard_unused_blocks_start_time(sys.argv[2])
 
     exit(0)
