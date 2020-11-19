@@ -27,23 +27,23 @@ use Getopt::Long;
 use Vyatta::Configd;
 use Vyatta::VPlaned;
 
-my %dp_arp_params = (
+my %arp_dp_params = (
     'stale-time' => 'stale-time',
     'table-size' => 'max-entry'
 );
-my $arp_node = "arp";
-my $arp_path = "system ip $arp_node";
-my $arp_prot = "arp";
+my $arp_node         = "arp";
+my $arp_path         = "system ip $arp_node";
+my $arp_prot         = "arp";
+my $arp_def_tbl_size = 1024;
 
-my %dp_nd_params = (
+my %nd_dp_params = (
     'resolution-throttling' => 'res-token',
     'table-size'            => 'max-entry'
 );
-my $nd_node = "neighbor";
-my $nd_path = "system ipv6 $nd_node";
-my $nd_prot = "nd6";
-
-my $def_max_table_size = 8192;
+my $nd_node         = "neighbor";
+my $nd_path         = "system ipv6 $nd_node";
+my $nd_prot         = "nd6";
+my $nd_def_tbl_size = 8192;
 
 sub set_dp_param {
     my ( $prot, $action, $dp_param, $value, $dev ) = @_;
@@ -93,14 +93,16 @@ $action = $ENV{COMMIT_ACTION} unless $action;
 usage() unless $action && grep { $_ eq $action } ( "SET", "ACTIVE", "DELETE" );
 $action = "SET" unless $action eq "DELETE";
 
-my ( $ip, $node, $path, $prot, %dp_params );
+my ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params );
 
 if ($ipv6) {
-    ( $ip, $node, $path, $prot, %dp_params ) =
-      ( "ipv6", $nd_node, $nd_path, $nd_prot, %dp_nd_params );
+    ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params ) =
+      ( "ipv6", $nd_node, $nd_path, $nd_prot, $nd_def_tbl_size, %nd_dp_params );
 } else {
-    ( $ip, $node, $path, $prot, %dp_params ) =
-      ( "ipv4", $arp_node, $arp_path, $arp_prot, %dp_arp_params );
+    ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params ) = (
+        "ipv4", $arp_node, $arp_path, $arp_prot, $arp_def_tbl_size,
+        %arp_dp_params
+    );
 }
 
 my @params = sort( keys %dp_params );
@@ -125,11 +127,10 @@ for my $param (@params) {
     }
 
     # Table size applies to both dataplane and kernel
-    # Apply default for delete action, needed when parent node removed
     elsif ( $param eq "table-size" ) {
         $value = $config ? $config->{$node}->{$param} : $value_in;
-        $value = $def_max_table_size unless defined($value) && $action eq "SET";
         set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+        $value = $def_tbl_size unless defined($value) && $action eq "SET";
         set_kernel_gc_thresholds( $ip, $value );
     }
 }

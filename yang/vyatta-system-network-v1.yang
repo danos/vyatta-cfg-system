@@ -57,6 +57,10 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2020-11-19 {
+		description "Add configuration for ARP cache size";
+	}
+
 	revision 2020-11-13 {
 		description "Allow ND table size of 128K entries";
 	}
@@ -176,6 +180,35 @@ module vyatta-system-network-v1 {
 		}
 	}
 
+	typedef table-size-enumeration {
+		type enumeration {
+			enum "1024" {
+				configd:help "entries";
+			}
+			enum "2048" {
+				configd:help "entries";
+			}
+			enum "4096" {
+				configd:help "entries";
+			}
+			enum "8192" {
+				configd:help "entries";
+			}
+			enum "16384" {
+				configd:help "entries";
+			}
+			enum "32768" {
+				configd:help "entries";
+			}
+			enum "65536" {
+				configd:help "entries";
+			}
+			enum "131072" {
+				configd:help "entries";
+			}
+		}
+	}
+
 	grouping system-network-hostname-ipinfo {
 		leaf host-name {
 			type string {
@@ -191,10 +224,15 @@ module vyatta-system-network-v1 {
 			presence "true";
 			configd:priority "400";
 			configd:help "IPv4 settings";
-			leaf arp {
-				status deprecated;
-				type empty;
+			container arp {
 				configd:help "Parameters for ARP cache";
+				leaf table-size {
+					type table-size-enumeration;
+					description "Maximum number of entries in ARP cache";
+					configd:help "Maximum number of entries in ARP cache (defaults: control plane: 1024, dataplane: 'unlimited')";
+					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=table-size --value=$VAR(@)";
+					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params --action=DELETE --param=table-size --value=$VAR(@)";
+				}
 			}
 			leaf disable-forwarding {
 				type empty;
@@ -245,32 +283,7 @@ module vyatta-system-network-v1 {
 				configd:priority "400";
 				configd:help "Parameters for Neighbor cache";
 				leaf table-size {
-					type enumeration {
-						enum "1024" {
-							configd:help "entries";
-						}
-						enum "2048" {
-							configd:help "entries";
-						}
-						enum "4096" {
-							configd:help "entries";
-						}
-						enum "8192" {
-							configd:help "entries";
-						}
-						enum "16384" {
-							configd:help "entries";
-						}
-						enum "32768" {
-							configd:help "entries";
-						}
-						enum "65536" {
-							configd:help "entries";
-						}
-						enum "131072" {
-							configd:help "entries";
-						}
-					}
+					type table-size-enumeration;
 					configd:help "Maximum number of entries to keep in the Neighbor cache (default: 8192)";
 					default "8192";
 					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=table-size --value=$VAR(@) --ipv6";
