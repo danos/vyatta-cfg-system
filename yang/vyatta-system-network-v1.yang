@@ -58,15 +58,9 @@ module vyatta-system-network-v1 {
 		 Global network parameter configuration";
 
 	revision 2020-11-19 {
-		description "Add configuration for ARP cache size";
-	}
-
-	revision 2020-11-13 {
-		description "Allow ND table size of 128K entries";
-	}
-
-	revision 2020-11-12 {
-		description "Modify actions for ND";
+		description "Add configuration for ARP cache size and ARP cache timeout.
+			     Allow ND table size of 128K entries.
+			     Modify actions for ND.";
 	}
 
 	revision 2020-08-07 {
@@ -226,12 +220,20 @@ module vyatta-system-network-v1 {
 			configd:help "IPv4 settings";
 			container arp {
 				configd:help "Parameters for ARP cache";
+				configd:end "/opt/vyatta/sbin/vyatta-update-arp-params --action=${COMMIT_ACTION}";
 				leaf table-size {
 					type table-size-enumeration;
 					description "Maximum number of entries in ARP cache";
 					configd:help "Maximum number of entries in ARP cache (defaults: control plane: 1024, dataplane: 'unlimited')";
-					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=table-size --value=$VAR(@)";
-					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params --action=DELETE --param=table-size --value=$VAR(@)";
+				}
+				leaf stale-time {
+					type uint32 {
+						range 30..21474836;
+						configd:help "time (in seconds)";
+					}
+					units seconds;
+					description "Expiry time for stale entries in ARP cache";
+					configd:help "Expiry time for stale entries in ARP cache (defaults: control plane: 60s, dataplane: 1200s)";
 				}
 			}
 			leaf disable-forwarding {

@@ -23,12 +23,14 @@
 use strict;
 use warnings;
 use lib "/opt/vyatta/share/perl5";
+use File::Slurp qw( write_file );
 use Getopt::Long;
 use Vyatta::Configd;
 use Vyatta::VPlaned;
 
+# ARP
 my %arp_dp_params = (
-    'stale-time' => 'stale-time',
+    'stale-time' => 'aging-time',
     'table-size' => 'max-entry'
 );
 my $arp_node         = "arp";
@@ -36,6 +38,7 @@ my $arp_path         = "system ip $arp_node";
 my $arp_prot         = "arp";
 my $arp_def_tbl_size = 1024;
 
+# ND
 my %nd_dp_params = (
     'resolution-throttling' => 'res-token',
     'table-size'            => 'max-entry'
@@ -44,6 +47,10 @@ my $nd_node         = "neighbor";
 my $nd_path         = "system ipv6 $nd_node";
 my $nd_prot         = "nd6";
 my $nd_def_tbl_size = 8192;
+
+# BOTH
+my $def_stale_time = 60;
+my $min_tbl_size   = 1;
 
 sub set_dp_param {
     my ( $prot, $action, $dp_param, $value, $dev ) = @_;
@@ -64,12 +71,36 @@ sub set_dp_param {
 
 sub set_kernel_gc_thresholds {
     use integer;
-    my ( $ip, $arp_value ) = @_;
-    my $soft_max = $arp_value / 2;
-    my $min      = $arp_value / 8;
-    system("sysctl -q net.$ip.neigh.default.gc_thresh3=$arp_value");
+    my ( $ip, $max, $min_in ) = @_;
+    my $soft_max = $max / 2;
+    my $min = defined($min_in) ? $min_in : $max / 8;
+
+    system("sysctl -q net.$ip.neigh.default.gc_thresh3=$max");
     system("sysctl -q net.$ip.neigh.default.gc_thresh2=$soft_max");
     system("sysctl -q net.$ip.neigh.default.gc_thresh1=$min");
+    return;
+}
+
+# The gc_stale_time kernel parameter has a 'default' but no 'all' target, so
+# in addition to "sysctl -q net.$ip.neigh.default.gc_stale_time=$time", need
+# to set the parameter for some interface types. As system calls and retrieving
+# interfaces from config is expensive, update this parameter directly for all
+# interfaces.
+sub set_kernel_gc_stale_time {
+    my ( $ip, $time ) = @_;
+    my $dir   = "/proc/sys/net/$ip/neigh";
+    my $param = "gc_stale_time";
+    my $err_i;
+
+    opendir( DIR, $dir ) or die "Could not open $dir: $!";
+    while ( my $i = readdir DIR ) {
+        next if !index( $i, '.' );
+        write_file( "$dir/$i/$param", { err_mode => 'quiet' }, $time )
+          or $err_i = $i;
+    }
+    closedir DIR;
+    print "Warning: unable to set $param for some interfaces, e.g. $err_i\n"
+      if $err_i;
     return;
 }
 
@@ -126,11 +157,32 @@ for my $param (@params) {
         set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
     }
 
+    # Stale time applies to both dataplane and kernel
+    elsif ( $param eq "stale-time" ) {
+        $value = $config ? $config->{$node}->{$param} : $value_in;
+        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+
+        $value = $def_stale_time unless defined($value) && $action eq "SET";
+        set_kernel_gc_stale_time( $ip, $value );
+    }
+
     # Table size applies to both dataplane and kernel
     elsif ( $param eq "table-size" ) {
         $value = $config ? $config->{$node}->{$param} : $value_in;
         set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
-        $value = $def_tbl_size unless defined($value) && $action eq "SET";
-        set_kernel_gc_thresholds( $ip, $value );
+
+        my $min;
+        if ( !defined($value) || $action eq "DELETE" ) {
+            $value = $def_tbl_size;
+
+            # If stale time is set and table size is not, then configure kernel
+            # cache so gc runs if there any entries. This ensures that the stale
+            # timeout is enforced regardless of number of entries in cache, for
+            # test purposes. This is not suitable at any scale due to memory
+            # thrashing, so is not done if a table size is configured.
+            $min = $min_tbl_size
+              if $config && $config->{$node}->{'stale-time'};
+        }
+        set_kernel_gc_thresholds( $ip, $value, $min );
     }
 }
