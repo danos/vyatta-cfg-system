@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.32.2) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Validate time when configuring start time to set discard unused blocks
+    schedule. Fixes VRVDR-52928.
+
+ -- William Ivory <william.ivory@intl.att.com>  Mon, 23 Nov 2020 17:50:07 +0000
+
 vyatta-cfg-system (2.32.1) unstable; urgency=medium
 
   [ Sameer Agrawal ]
