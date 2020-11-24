@@ -29,6 +29,7 @@ use File::Copy;
 use File::Temp qw/ tempfile /;
 use File::Path qw(make_path remove_tree);
 use IPC::Run3;
+use File::Slurp qw(read_file);
 
 my $BASE_ENVIRONMENT_DIR = "/etc";
 
@@ -199,7 +200,7 @@ sub update_systemd {
 }
 
 sub update_inittab {
-    $comm = read_file('/proc/1/comm');
+    my $comm = read_file('/proc/1/comm');
     return update_systemd() if ($comm and ($comm =~ /systemd/));
 
     open( my $inittab, '<', $INITTAB )
