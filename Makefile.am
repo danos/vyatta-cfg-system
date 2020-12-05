@@ -4,8 +4,6 @@ share_perl5dir = $(datarootdir)/perl5/Vyatta
 share_perl5_logindir = $(datarootdir)/perl5/Vyatta/Login
 etcdir = /etc
 initddir = /etc/init.d
-vpamcfgdir = /opt/vyatta/etc/pam-configs
-pamconfigdir = /usr/share/pam-configs
 modprobedir = /etc/modprobe.d
 modprobe_DATA = etc/modprobe.d/dummy.conf
 modprobe_DATA += etc/modprobe.d/realtek.conf
@@ -34,11 +32,6 @@ initd_SCRIPTS =
 kbdconfigddir = /etc/kbd/config.d
 kbdconfigd_DATA = etc/kbd/config.d/vyatta
 
-pamconfig_DATA = usr/share/pam-configs/umask
-
-bin_SCRIPTS  += scripts/encrypt_shadow_passwd
-bin_SCRIPTS  += scripts/show-users-op
-bin_SCRIPTS  += scripts/system/vyatta_tally_op
 bin_SCRIPTS  += scripts/vyatta-block-device
 bin_SCRIPTS  += scripts/vyatta-clear-block-device-op
 bin_SCRIPTS  += scripts/vyatta-conf-sensors
@@ -47,7 +40,6 @@ bin_SCRIPTS  += scripts/vyatta-gettime.pl
 bin_SCRIPTS  += scripts/vyatta-monitor
 bin_SCRIPTS  += scripts/vyatta-monitor-parse.pl
 bin_SCRIPTS  += scripts/vyatta-show-block-device
-bin_SCRIPTS  += scripts/vyatta-show-current-user
 bin_SCRIPTS  += scripts/vyatta-show-dmi
 bin_SCRIPTS  += scripts/vyatta-show-fru
 bin_SCRIPTS  += scripts/vyatta-show-licenses.pl
@@ -60,25 +52,15 @@ bin_SCRIPTS  += scripts/yangop-get-sensor
 sbin_SCRIPTS += scripts/check_file_in_config_dir
 sbin_SCRIPTS += scripts/vyatta-cpu-history-client
 sbin_SCRIPTS += scripts/vyatta-cpu-history-daemon
-sbin_SCRIPTS += scripts/standalone_root_pw_reset
-sbin_SCRIPTS += scripts/vyatta-passwd-sync
-sbin_SCRIPTS += scripts/system-login-information
-sbin_SCRIPTS += scripts/system/vyatta_check_username.pl
 sbin_SCRIPTS += scripts/system/vyatta_check_domainname.pl
-sbin_SCRIPTS += scripts/system/vyatta_create_account
-sbin_SCRIPTS += scripts/system/vyatta_tally_rpc
 sbin_SCRIPTS += scripts/system/vyatta_update_hosts.pl
-sbin_SCRIPTS += scripts/system/vyatta_update_login.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_resolv.pl
 sbin_SCRIPTS += scripts/system/vyatta_update_console.pl
-sbin_SCRIPTS += scripts/system/update_password_quality.pl
 sbin_SCRIPTS += scripts/vyatta-system-nameservers
 sbin_SCRIPTS += scripts/restore-ipv6-address.pl
 sbin_SCRIPTS += scripts/vyatta-ipv6-disable
 sbin_SCRIPTS += scripts/check-ipv4-ipv6.pl
 sbin_SCRIPTS += scripts/vyatta-update-arp-params
-sbin_SCRIPTS += scripts/vyatta-banner.pl
-sbin_SCRIPTS += scripts/vyatta-change-password
 sbin_SCRIPTS += scripts/vyatta-pxe-boot
 sbin_SCRIPTS += scripts/system-configure
 sbin_SCRIPTS += scripts/system-postconfigure
@@ -94,8 +76,6 @@ sbin_SCRIPTS += scripts/ipv6-wait-for-dad
 sbin_SCRIPTS += scripts/vyatta-platform-setup
 sbin_SCRIPTS += scripts/vyatta_static_host_mapping
 
-share_perl5_login_DATA = lib/Vyatta/Login/User.pm
-
 share_perl5_DATA = lib/Vyatta/File.pm
 share_perl5_DATA += lib/Vyatta/ioctl.pm
 share_perl5_DATA += lib/Vyatta/FeatureConfig.pm
@@ -107,14 +87,11 @@ sysconf_DATA += sysconf/level
 vyatta_config_scriptsdir = /opt/vyatta/etc/config/scripts
 vyatta_config_scripts_SCRIPTS = scripts/vyatta-postconfig-bootup.script
 
-vyatta_security_DATA = etc/security/pwquality.config.template
-
 vyatta_preconfigddir = /opt/vyatta/preconfig.d
 vyatta_preconfigd_SCRIPTS = preconfig.d/0400-bootif-hwaddr
 vyatta_preconfigd_SCRIPTS += preconfig.d/0500-vyatta-config-url
 vyatta_preconfigd_SCRIPTS += preconfig.d/1000-fix_permissions
 vyatta_preconfigd_SCRIPTS += preconfig.d/1000-init-bootfile
-vyatta_preconfigd_SCRIPTS += preconfig.d/5000-banner
 vyatta_preconfigd_SCRIPTS += preconfig.d/5000-package-repository
 vyatta_preconfigd_SCRIPTS += preconfig.d/5000-ipv6-service-class
 
@@ -134,7 +111,6 @@ cpiop = find  . ! -regex '\(.*~\|.*\.bak\|.*\.swp\|.*\#.*\#\)' -print0 | \
   cpio -0pd
 
 install-exec-hook:
-	mkdir -p $(DESTDIR)$(vpamcfgdir)
 	mkdir -p $(DESTDIR)$(templatedir)
 	cd templates && $(cpiop) $(DESTDIR)$(templatedir)
 	mkdir -p $(DESTDIR)$(tmplscritdir)
