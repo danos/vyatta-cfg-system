@@ -27,43 +27,59 @@ use File::Slurp qw( write_file );
 use Getopt::Long;
 use Vyatta::Configd;
 use Vyatta::VPlaned;
+use vyatta::proto::NbrResConfig;
 
 # ARP
-my %arp_dp_params = (
-    'stale-time' => 'aging-time',
-    'table-size' => 'max-entry'
-);
+my @arp_params       = ( "stale-time", "table-size" );
 my $arp_node         = "arp";
 my $arp_path         = "system ip $arp_node";
 my $arp_prot         = "arp";
 my $arp_def_tbl_size = 1024;
 
 # ND
-my %nd_dp_params = (
-    'resolution-throttling' => 'res-token',
-    'table-size'            => 'max-entry'
-);
+my @nd_params       = ( "resolution-throttling", "table-size" );
 my $nd_node         = "neighbor";
 my $nd_path         = "system ipv6 $nd_node";
 my $nd_prot         = "nd6";
 my $nd_def_tbl_size = 8192;
 
 # BOTH
+my %dp_actions = (
+    'SET'    => NbrResConfig::Action::SET(),
+    'DELETE' => NbrResConfig::Action::DELETE()
+);
+my %dp_params = (
+    'stale-time'            => NbrResConfig::Param::AGING_TIME(),
+    'resolution-throttling' => NbrResConfig::Param::RES_TOKEN(),
+    'table-size'            => NbrResConfig::Param::MAX_ENTRY()
+);
+my %dp_prots = (
+    'arp' => NbrResConfig::Prot::ARP(),
+    'nd6' => NbrResConfig::Prot::ND6()
+);
 my $def_stale_time = 60;
 my $min_tbl_size   = 1;
 
 sub set_dp_param {
-    my ( $prot, $action, $dp_param, $value, $dev ) = @_;
+    my ( $prot, $action, $param, $value, $dev ) = @_;
     my $cstore = new Vyatta::VPlaned;
+    my $dp_param = $dp_params{$param};
 
     $dev = "all" unless $dev;
-    if ( !defined($value) ) {
-        $value  = "";
-        $action = "DELETE";
-    }
-    $cstore->store(
+    $action = "DELETE" unless defined($value);
+
+    my $msg = NbrResConfig->new(
+        {
+            prot   => $dp_prots{$prot},
+            action => $dp_actions{$action},
+            ifname => $dev,
+            param  => $dp_param,
+            value  => $value,
+        }
+    );
+    $cstore->store_pb(
         "$prot $dev $dp_param",
-        "$prot " . lc($action) . " $dev $dp_param $value",
+        $msg, "vyatta:" . $prot,
         $dev, $action
     );
     return;
@@ -124,19 +140,17 @@ $action = $ENV{COMMIT_ACTION} unless $action;
 usage() unless $action && grep { $_ eq $action } ( "SET", "ACTIVE", "DELETE" );
 $action = "SET" unless $action eq "DELETE";
 
-my ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params );
+my ( $ip, $node, $path, $prot, $def_tbl_size, @params );
 
 if ($ipv6) {
-    ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params ) =
-      ( "ipv6", $nd_node, $nd_path, $nd_prot, $nd_def_tbl_size, %nd_dp_params );
+    ( $ip, $node, $path, $prot, $def_tbl_size, @params ) =
+      ( "ipv6", $nd_node, $nd_path, $nd_prot, $nd_def_tbl_size, @nd_params );
 } else {
-    ( $ip, $node, $path, $prot, $def_tbl_size, %dp_params ) = (
-        "ipv4", $arp_node, $arp_path, $arp_prot, $arp_def_tbl_size,
-        %arp_dp_params
+    ( $ip, $node, $path, $prot, $def_tbl_size, @params ) = (
+        "ipv4", $arp_node, $arp_path, $arp_prot, $arp_def_tbl_size, @arp_params
     );
 }
 
-my @params = sort( keys %dp_params );
 my ( $config, $value );
 
 if ( defined($param_in) ) {
@@ -154,13 +168,13 @@ for my $param (@params) {
     # Resolution throttling is only available in the dataplane
     if ( $param eq "resolution-throttling" ) {
         $value = $config ? $config->{$node}->{$param} : $value_in;
-        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+        set_dp_param( $prot, $action, $param, $value, $dev );
     }
 
     # Stale time applies to both dataplane and kernel
     elsif ( $param eq "stale-time" ) {
         $value = $config ? $config->{$node}->{$param} : $value_in;
-        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+        set_dp_param( $prot, $action, $param, $value, $dev );
 
         $value = $def_stale_time unless defined($value) && $action eq "SET";
         set_kernel_gc_stale_time( $ip, $value );
@@ -169,7 +183,7 @@ for my $param (@params) {
     # Table size applies to both dataplane and kernel
     elsif ( $param eq "table-size" ) {
         $value = $config ? $config->{$node}->{$param} : $value_in;
-        set_dp_param( $prot, $action, $dp_params{$param}, $value, $dev );
+        set_dp_param( $prot, $action, $param, $value, $dev );
 
         my $min;
         if ( !defined($value) || $action eq "DELETE" ) {

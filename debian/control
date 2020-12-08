@@ -48,7 +48,9 @@ Architecture: all
 Depends:
  vplane-config (>= 2.47),
  vyatta-dataplane-cfg-ip4-0,
+ vyatta-dataplane-cfg-pb-vyatta:arp-0,
  vyatta-dataplane-cfg-pb-vyatta:ip6-0,
+ vyatta-dataplane-cfg-pb-vyatta:nd6-0,
  vyatta-interfaces (>= 1.32),
  vyatta-system,
  ${misc:Depends},
