@@ -101,7 +101,7 @@ sub update {
 	        my $timeout = $rconfig->returnValue("$server timeout");
 	        # in version 1.4 there's a new parameter, source_ip
 	        my $src_ip = "";
-	        my @cmd = ("dpkg-query", "-W", "-f='\${Version}'", "libpam-radius-auth");
+	        my @cmd = ("dpkg-query", "-W", "-f=\${Version}", "libpam-radius-auth");
 	        my $stdout;
 	        if ( run3( \@cmd, \undef, \$stdout, \undef ) ) {
 	            @cmd = ("dpkg", "--compare-versions", "$stdout", "ge", "1.4");
