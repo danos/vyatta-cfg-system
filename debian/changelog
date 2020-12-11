@@ -1,3 +1,43 @@
+vyatta-cfg-system (2.33) unstable; urgency=medium
+
+  [ Mike Manning ]
+  * Improve temporary file handling for password recovery
+
+  [ Sameer Agrawal ]
+  * Add log message when the block device's scheduler is updated. Fixes
+    VRVDR-53370
+
+  [ Nicholas Brown ]
+  * vyatta-system.tmpfile: /var/run -> /run
+
+  [ Sameer Agrawal ]
+  * Use IPC::Run3 to avoid running executable or bash commands when using
+    full-name for the user login field and possible other places. Fixes
+    VRVDR-52925.
+  * Validate time when configuring start time to set discard unused blocks
+    schedule. Fixes VRVDR-52928.
+
+  [ Mike Manning ]
+  * Improve warning message when IPv6 is enabled and DAD is still failing
+
+  [ Sharmila Podury ]
+  * Setting console related config fails
+  * Move login/password files to new repo
+
+  [ Mike Manning ]
+  * Allow script for ARP parameters to handle all parameters in a single
+    call
+  * Allow ND table size of 128K entries
+  * Add ARP configuration for table size
+  * Add ARP configuration for stale time
+  * Convert script for ARP and ND parameters to use protobufs
+
+  [ Sameer Agrawal ]
+  * Fix warning message: version number does not start with digit, when
+    configuring radius server. VRVDR-53817
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 11 Dec 2020 16:35:38 +0000
+
 vyatta-cfg-system (2.32) unstable; urgency=medium
 
   [ Sameer Agrawal ]
