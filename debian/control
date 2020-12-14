@@ -105,6 +105,7 @@ Depends:
  libtemplate-perl,
  libtime-duration-perl,
  libvyatta-cfgclient-perl,
+ libvyatta-config-perl,
  libxml-bare-perl,
  lm-sensors,
  lsof,
@@ -263,7 +264,8 @@ Architecture: all
 Depends:
  ${misc:Depends},
  vyatta-cfg-system (>= ${source:Version}),
- libpam-radius-auth
+ libpam-radius-auth,
+ libvyatta-config-perl
 Breaks: vyatta-cfg-system (<< 2.20)
 Replaces: vyatta-cfg-system (<< 2.20)
 Section: contrib/net
