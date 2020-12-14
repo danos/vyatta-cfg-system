@@ -18,7 +18,6 @@ Build-Depends:
  python3-vyatta-cfgclient,
  ronn | ruby-ronn,
  shunit2,
- libvyatta-cfg1,
  libtest2-suite-perl,
  libjson-perl,
  libjson-xs-perl,
