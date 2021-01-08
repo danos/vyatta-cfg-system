@@ -1,6 +1,6 @@
 # **** License ****
 #
-# Copyright (c) 2017-2020 AT&T Intellectual Property.
+# Copyright (c) 2017-2021 AT&T Intellectual Property.
 #    All Rights Reserved.
 # Copyright (c) 2014, 2016 Brocade Communications Systems, Inc.
 #    All Rights Reserved.
@@ -103,9 +103,11 @@ sub update {
 	        my $src_ip = "";
 	        my @cmd = ("dpkg-query", "-W", "-f=\${Version}", "libpam-radius-auth");
 	        my $stdout;
-	        if ( run3( \@cmd, \undef, \$stdout, \undef ) ) {
+	        run3( \@cmd, \undef, \$stdout, \undef );
+	        if ( $? == 0 ) {
 	            @cmd = ("dpkg", "--compare-versions", "$stdout", "ge", "1.4");
-	            if (run3( \@cmd, \undef, undef, undef )) {
+	            run3( \@cmd, \undef, undef, undef);
+	            if ( $? == 0 ) {
 	                $src_ip = "0";
 	            }
 	        }
