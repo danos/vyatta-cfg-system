@@ -175,12 +175,6 @@ Suggests: dialog, ncurses-bin (>= 5.5-5)
 Description: Vyatta system-level configuration (meta-package)
  Vyatta system-level configuration utiliites, templates and scripts.
 
-Package: vyatta-system-login-radius-routing-instance-v1-yang
-Architecture: all
-Depends: ${misc:Depends}, ${yang:Depends}
-Description: vyatta-system-login-radius-routing-instance-v1 module
- The YANG module for vyatta-system-login-radius-routing-instance-v1
-
 Package: vyatta-op-show-hardware-v1-yang
 Architecture: all
 Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
@@ -258,20 +252,6 @@ Architecture: all
 Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-hardware-cpu-history-v1 module
  The YANG module for retrieving CPU utilization information
-
-Package: vyatta-radius-system-user-login-feature
-Architecture: all
-Depends:
- ${misc:Depends},
- vyatta-cfg-system (>= ${source:Version}),
- libpam-radius-auth,
- libvyatta-config-perl
-Breaks: vyatta-cfg-system (<< 2.20)
-Replaces: vyatta-cfg-system (<< 2.20)
-Section: contrib/net
-Priority: optional
-Description: Vyatta RADIUS system-user login feature flag
- The feature flag for RADIUS system-user login feature
 
 Package: vyatta-system-fru-v1-yang
 Architecture: all
