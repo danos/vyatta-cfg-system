@@ -1,3 +1,15 @@
+vyatta-cfg-system (2.32.4) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Fix warning message: version number does not start with digit, when
+    configuring radius server. VRVDR-53817
+
+  [ Duncan Eastoe ]
+  * RadiusServer.pm: correctly detect libpam-radius-auth ver.
+  * RadiusServer.pm: Check pam-auth-update exit code
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 19 Jan 2021 07:47:07 +0000
+
 vyatta-cfg-system (2.32.3) unstable; urgency=medium
 
   [ Sharmila Podury ]
