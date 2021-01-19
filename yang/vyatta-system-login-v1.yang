@@ -23,7 +23,7 @@ module vyatta-system-login-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		"Copyright (c) 2017-2021, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -60,6 +60,9 @@ module vyatta-system-login-v1 {
 
 		 System login configuration";
 
+	revision 2020-12-15 {
+		description "Deprecate RADIUS configuration.";
+	}
 	revision 2018-12-18 {
 		description "Remove invalid metachars from pattern string.
 			     Add RADIUS system-user login feature.
@@ -91,6 +94,7 @@ module vyatta-system-login-v1 {
 	}
 	grouping radius-server-group {
 		list radius-server {
+			status deprecated;
 			if-feature radius-system-user-login;
 			description "Radius server authentication";
 			configd:help "Radius server authentication";
