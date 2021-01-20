@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.32.5) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * yang: deprecate radius-server configuration
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 20 Jan 2021 16:53:00 +0000
+
 vyatta-cfg-system (2.32.4) unstable; urgency=medium
 
   [ Sameer Agrawal ]
