@@ -1,3 +1,14 @@
+vyatta-cfg-system (2.34) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * debian: remove libvyatta-cfg1 build dependency
+  * debian: declare deps on legacy Perl config module
+  * RadiusServer.pm: correctly detect libpam-radius-auth ver.
+  * RadiusServer.pm: Check pam-auth-update exit code
+  * Remove RADIUS pkgs, libraries, configs, etc.
+
+ -- Nicholas Brown <nick.brown@att.com>  Tue, 23 Feb 2021 11:13:11 +0000
+
 vyatta-cfg-system (2.33) unstable; urgency=medium
 
   [ Mike Manning ]
