@@ -134,7 +134,7 @@ check:
 	touch scripts/vyatta/__init__.py
 	ln -s /usr/lib/python3/dist-packages/vyatta/configd.py scripts/vyatta/configd.py
 # End of workaround
-	pylint3 -E 					\
+	$(PYLINT) -E 					\
 		scripts/vyatta-conf-sensors 		\
 		scripts/vyatta-cpu-history-client 	\
 		scripts/vyatta-cpu-history-daemon 	\
