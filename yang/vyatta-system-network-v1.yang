@@ -20,7 +20,7 @@ module vyatta-system-network-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2020 AT&T Intellectual Property
+		"Copyright (c) 2017-2021 AT&T Intellectual Property
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -56,6 +56,12 @@ module vyatta-system-network-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Global network parameter configuration";
+
+	revision 2021-03-15 {
+		description "Clarify that removal of ARP entries by the garbage collector
+			     in the control plane depends not only on cache timeout, but also
+			     on how many entries are present if cache size is configured.";
+	}
 
 	revision 2020-11-19 {
 		description "Add configuration for ARP cache size and ARP cache timeout.
@@ -223,7 +229,8 @@ module vyatta-system-network-v1 {
 				configd:end "/opt/vyatta/sbin/vyatta-update-arp-params --action=${COMMIT_ACTION}";
 				leaf table-size {
 					type table-size-enumeration;
-					description "Maximum number of entries in ARP cache";
+					description "Maximum number of entries in ARP cache.
+						     Defaults: control plane: 1024, dataplane: 'unlimited'";
 					configd:help "Maximum number of entries in ARP cache (defaults: control plane: 1024, dataplane: 'unlimited')";
 				}
 				leaf stale-time {
@@ -232,8 +239,11 @@ module vyatta-system-network-v1 {
 						configd:help "time (in seconds)";
 					}
 					units seconds;
-					description "Expiry time for stale entries in ARP cache";
-					configd:help "Expiry time for stale entries in ARP cache (defaults: control plane: 60s, dataplane: 1200s)";
+					description "Expiry time for stale entries in ARP cache.
+						     How long entries remain in control plane cache also
+						     depends on how many are present if table size is set.
+						     Defaults: control plane: 60s, dataplane: 1200s";
+					configd:help "Expiry time for stale entries in ARP cache (defaults: control plane [conditional]: 60s, dataplane: 1200s)";
 				}
 			}
 			leaf disable-forwarding {
