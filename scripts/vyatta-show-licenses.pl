@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2015-2016 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -11,6 +11,8 @@ use warnings;
 
 use Getopt::Long;
 use POSIX qw(strftime);
+use IO::File;
+use Vyatta::File qw(check_home);
 
 #Print a packages license usiang less
 sub _less_pkg_license {
@@ -22,18 +24,21 @@ sub _less_pkg_license {
 sub _write_licenses_to_file {
     system("dpkg --get-selections | awk '{ print \$1 }' > /tmp/pkgs");
     my $license_dest = shift;
-    system("truncate --size=0 $license_dest");
+
+    die "Cannot write to file outside home directory!\n" 
+      unless check_home($license_dest);
 
     open( my $fh, '<:encoding(UTF-8)', "/tmp/pkgs" )
       or die "Could not open file '/tmp/pkgs' $!";
+
+    my $d = IO::File->new($license_dest, O_WRONLY|O_CREAT|O_EXCL);
+    die "Cannot overwrite existing file\n" unless defined $d;
 
     while ( my $pkg = <$fh> ) {
         chomp $pkg;
         if ( ":amd64" eq substr( $pkg, -6, 6 ) ) {
             $pkg = substr( $pkg, 0, -6 );
         }
-        open( my $d, ">>", "$license_dest" )
-          or die "Could not open destination file\n";
         if ( open( my $s, "<", "/usr/share/doc/$pkg/copyright" ) ) {
             print {$d}
 "\n\nv=================== package: $pkg ===================v\n\n\n";
