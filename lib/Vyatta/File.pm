@@ -2,7 +2,7 @@
 # File manipulation functions
 
 # **** License ****
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -18,12 +18,13 @@ package Vyatta::File;
 use strict;
 use warnings;
 
-our @EXPORT = qw(touch mkdir_p rm_rf);
+our @EXPORT = qw(touch mkdir_p rm_rf check_home);
 our @EXPORT_OK = qw(show_error);
 use base qw(Exporter);
 
 use Fcntl;
 use File::Path qw(make_path remove_tree);
+use File::Slurp qw(read_file);
 
 # Change file time stamps
 # if file does not exist, it is created empty
@@ -64,6 +65,19 @@ sub show_error {
 	my ($f, $msg) = %$diag;
 	warn "$f: $msg\n";
     }
+}
+
+sub check_home {
+    my ($file) = @_;
+    my $uid = read_file('/proc/self/loginuid');
+    chomp $uid;
+    my $home;
+    if ($uid) {
+        my @pwe = getpwuid($uid);
+        $home = $pwe[7] if ( scalar(@pwe) >= 8 );
+    }
+    return unless defined($home) and length($home) > 1;
+    return substr( $file, 0, length($home) ) eq $home;
 }
 
 1;
