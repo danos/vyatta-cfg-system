@@ -1,3 +1,11 @@
+vyatta-cfg-system (2.34.2) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * System files and existing files should not be overwritten when using
+    the "show license" command. VRVDR-54508
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 13 Apr 2021 07:40:49 +0100
+
 vyatta-cfg-system (2.34.1) unstable; urgency=medium
 
   [ Mike Manning ]
