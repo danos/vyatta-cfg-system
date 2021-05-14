@@ -2,6 +2,9 @@ module vyatta-system-network-v1 {
 	namespace "urn:vyatta.com:mgmt:vyatta-system-network:1";
 	prefix vyatta-system-network-v1;
 
+	import vyatta-dscp-v1 {
+		prefix dscp;
+	}
 	import vyatta-types-v1 {
 		prefix types;
 	}
@@ -56,6 +59,11 @@ module vyatta-system-network-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Global network parameter configuration";
+
+	revision 2021-06-28 {
+		description "Add configuration for TOS(ICMPv4 and ESP).
+			     Add configuration for TCLASS(ICMPv6, ND, ESP).";
+	}
 
 	revision 2021-06-11 {
 		description "Add ICMP rate limiting operational model.";
@@ -251,6 +259,16 @@ module vyatta-system-network-v1 {
 		}
 	}
 
+	typedef service-class {
+		type string {
+			pattern "0x[0-9a-fA-F]{1,2}";
+			configd:pattern-help "<0x00-0xFF>";
+		}
+		description "The service-class type represents a one byte hex value.
+			     service-class represents the traffic class field in IPv6 packet
+			     and type of service field in IPv4 packet.";
+	}
+
 	grouping system-network-hostname-ipinfo {
 		leaf host-name {
 			type string {
@@ -386,6 +404,40 @@ module vyatta-system-network-v1 {
 				configd:help "Disable IPv4 ICMP redirects";
 				configd:create "/opt/vyatta/share/tmplscripts/system/ip/disable-redirects/configd_create.sh";
 				configd:delete "/opt/vyatta/share/tmplscripts/system/ip/disable-redirects/configd_delete.sh";
+			}
+			container icmp-error {
+				description "Assign forwarding class to ICMPv4 error packets.";
+				configd:help "TOS value to be used when dataplane sending ICMP error packets.";
+				leaf tos {
+					type service-class;
+					description "Dataplane creates the ICMPv4 error messages with TOS value
+						     and sends the control packet out.";
+					configd:help "Type of Service (TOS)";
+					default "0xC0";
+					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv4";
+					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv4";
+				}
+			}
+			container esp {
+				description "Assign forwarding class to ESP packets.";
+				configd:help "TOS value to be used when sending IPsec IPv4 packet";
+				leaf tos {
+					type union {
+						type enumeration {
+							enum "inherit" {
+								configd:help "Inherit from original IP header";
+							}
+						}
+						type service-class;
+					}
+					description "IPsec IPv4 packets goes out with given TOS value.
+						     By default Dataplane creates a packet with TOS inherited from
+						     orignal IP header.";
+					configd:help "Type of Service (TOS)";
+					default "inherit";
+					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=esp --value=$VAR(@) --ip=ipv4";
+					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=esp --value=$VAR(@) --ip=ipv4";
+				}
 			}
 		}
 		container ipv6 {
@@ -524,6 +576,53 @@ module vyatta-system-network-v1 {
 			     configd:help "Disable IPv6 ND redirects";
 			     configd:create "ip6_disable_redirects --action=true";
 			     configd:delete "ip6_disable_redirects --action=false";
+			}
+			container icmpv6-error {
+				description "Assign forwarding class to ICMPv6-error packets.";
+				configd:help "Tclass value to be used when dataplane sending ICMPv6 error packets.";
+				leaf tclass {
+					type service-class;
+					description "Dataplane creates the ICMPv6 error messages with tclass value
+						     and sends the control packet out.";
+					configd:help "Traffic class (Tclass)";
+					default "0x00";
+					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv6";
+					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv6";
+				}
+			}
+			container nd {
+				description "Assign forwarding class to ND packets.";
+				configd:help "Tclass value to be used when dataplane sending ND packets.";
+				leaf tclass {
+					type service-class;
+					configd:help "Traffic class (Tclass)";
+					description "Dataplane creates the neighbor discovery packets for all
+						     types with tclass value and sends the packet out.";
+					default "0xC0";
+					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=nd --value=$VAR(@) --ip=ipv6";
+					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=nd --value=$VAR(@) --ip=ipv6";
+				}
+			}
+			container esp {
+				description "Assign forwarding class to ESP packets.";
+				configd:help "Tclass value to be used when sending IPsec IPv6 packet";
+				leaf tclass {
+					type union {
+						type enumeration {
+							enum "inherit" {
+								configd:help "Inherit from original IP header";
+							}
+						}
+						type service-class;
+					}
+					description "IPsec IPv6 packets goes out with given tclass value.
+						     By default Dataplane creates a packet with tclass inherited from
+						     orignal IP header.";
+					configd:help "Traffic class (Tclass)";
+					default "inherit";
+					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=esp --value=$VAR(@) --ip=ipv6";
+					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=esp --value=$VAR(@) --ip=ipv6";
+				}
 			}
 		}
 	}
