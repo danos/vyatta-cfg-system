@@ -4,7 +4,7 @@
 #
 # **** License ****
 #
-# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -30,6 +30,7 @@ use IO::Prompt;
 use Sys::Syslog qw(:standard :macros);
 use IPC::Run3;
 use File::Slurp qw( write_file );
+use JSON;
 
 use strict;
 use warnings;
@@ -337,6 +338,49 @@ sub do_shutdown_show {
     }
 }
 
+sub encode_json_output {
+    my $output = shift;
+    print encode_json( { 'vyatta-system-reboot-v1:msg' => $output } );
+}
+
+#
+# Reboot system handler for reboot, reboot now
+# and reboot hardware.
+#
+sub do_reboot {
+    my ($login, $reboot_type) = @_;
+    my ($output, $err);
+
+    if ($reboot_type eq "now") {
+        $output = "The system is going down for reboot\n";
+        encode_json_output($output);
+        syslog("warning", "Reboot now requested by $login");
+        exec("/sbin/reboot");
+    } elsif ($reboot_type eq "hardware") {
+        syslog("warning", "All hardware systems reboot requested by $login");
+        my @cmd = ("/usr/bin/ipmitool", "raw", "0x3c", "0x24", "0x01", "0x00");
+        run3 (\@cmd, undef, \$output, \$err);
+        if ($? != 0) {
+            syslog("warning", "Reboot hardware operation failed: $err");
+            die("Operation is not supported by the firmware!\n");
+        }
+        $output = "All hardware systems will be rebooted\n";
+        encode_json_output($output);
+    }
+    exit 0;
+}
+
+#
+# Decode JSON input from RPC/Netconf.
+#
+sub parse_json_input {
+    my $login = shift;
+
+    my $input = join( '', <STDIN> );
+    my $rpc = decode_json($input);
+    my $reboot_type = $rpc->{"type"};
+    do_reboot($login, $reboot_type);
+}
 
 #
 # main
@@ -355,6 +399,7 @@ my %actions = ( poweroff        => \&do_shutdown,
                 reboot_cancel   => \&do_shutdown_cancel,
                 poweroff_show   => \&do_shutdown_show,
                 reboot_show     => \&do_shutdown_show,
+                parse_input     => \&parse_json_input,
               );
 
 #

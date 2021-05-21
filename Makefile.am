@@ -39,6 +39,7 @@ bin_SCRIPTS  += scripts/vyatta-cpu-summary.pl
 bin_SCRIPTS  += scripts/vyatta-gettime.pl
 bin_SCRIPTS  += scripts/vyatta-monitor
 bin_SCRIPTS  += scripts/vyatta-monitor-parse.pl
+bin_SCRIPTS  += scripts/vyatta-op-reboot
 bin_SCRIPTS  += scripts/vyatta-show-block-device
 bin_SCRIPTS  += scripts/vyatta-show-dmi
 bin_SCRIPTS  += scripts/vyatta-show-fru

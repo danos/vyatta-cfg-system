@@ -276,3 +276,15 @@ Architecture: all
 Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-clear-block-device-v1 module
  The YANG module for clear block-device operational commands
+
+Package: vyatta-op-reboot-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-reboot-v1 module
+ The YANG module for reboot operational commands
+
+Package: vyatta-system-reboot-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-reboot-v1 module
+ The YANG module for system reboot

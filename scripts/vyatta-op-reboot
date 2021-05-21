@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+import os
+import sys
+
+from vyatta import configd
+
+
+def invoke_rpc(type):
+    c = configd.Client()
+
+    try:
+        output = c.call_rpc_dict("vyatta-system-reboot-v1",
+                                 "reboot",
+                                 {"type": type})
+    except Exception as e:
+        print("Unable to reboot: " + str(e) + "\n", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        result = output["msg"]
+    except KeyError:
+        result = "Unable to fetch output of the reboot command"
+
+    print(result)
+
+
+if __name__ == "__main__":
+
+    if len(sys.argv) > 1:
+        reboot_type = sys.argv[1]
+
+    if len(sys.argv) == 1 or reboot_type == "hardware":
+        reboot_flag = input("Proceed with reboot? (Yes/No) [No] ")
+        reboot_flag = reboot_flag.lower()
+
+        env = os.getenv('VYATTA_PROCESS_CLIENT')
+        if (env is not None and env == 'gui2_rest') or \
+          reboot_flag == "yes" or reboot_flag == "y":
+            # Got confirmation for reboot, proceed as reboot now
+            if len(sys.argv) == 1:
+                reboot_type = "now"
+            invoke_rpc(reboot_type)
+        else:
+            print("Reboot canceled\n")
+    else:
+        invoke_rpc(reboot_type)
