@@ -31,6 +31,7 @@ use Sys::Syslog qw(:standard :macros);
 use IPC::Run3;
 use File::Slurp qw( write_file );
 use JSON;
+use Vyatta::RebootReason;
 
 use strict;
 use warnings;
@@ -145,6 +146,7 @@ sub poweroff_now {
     my $login = shift;
     system("wall The system is going down for system halt\n");
     syslog("warning", "Poweroff now requested by $login");
+    log_reboot_reason("CLI poweroff: System was powered off by user $login");
     exec("/sbin/poweroff");
 }
 
@@ -156,6 +158,7 @@ sub reboot_now {
     my $login = shift;
     system("wall The system is going down for reboot\n");
     syslog("warning", "Reboot now requested by $login");
+    log_reboot_reason("CLI reboot: System was rebooted by user $login");
     exec("/sbin/reboot");
 }
 
@@ -255,6 +258,7 @@ sub do_shutdown_at {
 
     print "\n".ucfirst($action)." scheduled for $time\n";
     syslog("warning", ucfirst($action)." scheduled for [$time] by $login");
+    log_reboot_reason("Scheduled CLI $action: System $action was scheduled at $time by $login");
 
     return 0;
 }
@@ -355,9 +359,11 @@ sub do_reboot {
         $output = "The system is going down for reboot\n";
         encode_json_output($output);
         syslog("warning", "Reboot now requested by $login");
+        log_reboot_reason("CLI reboot: System was rebooted by user $login");
         exec("/sbin/reboot");
     } elsif ($reboot_type eq "hardware") {
         syslog("warning", "All hardware systems reboot requested by $login");
+        log_reboot_reason("CLI reboot: All hardware systems reboot requested by user $login");
         my @cmd = ("/usr/bin/ipmitool", "raw", "0x3c", "0x24", "0x01", "0x00");
         run3 (\@cmd, undef, \$output, \$err);
         if ($? != 0) {

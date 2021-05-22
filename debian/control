@@ -108,6 +108,7 @@ Depends:
  libtime-duration-perl,
  libvyatta-cfgclient-perl,
  libvyatta-config-perl,
+ libvyatta-reboot-reason-perl,
  libxml-bare-perl,
  lm-sensors,
  lsof,
@@ -321,3 +322,9 @@ Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-clear-system-ip-icmp-v1 module
  The YANG module for clear system ICMP operational commands
+
+Package: libvyatta-reboot-reason-perl
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: Vyatta reboot reason perl module
+ Perl module for vyatta reboot reason
