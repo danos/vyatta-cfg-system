@@ -50,6 +50,7 @@ Depends:
  vyatta-dataplane-cfg-pb-vyatta:arp-0,
  vyatta-dataplane-cfg-pb-vyatta:ip6-0,
  vyatta-dataplane-cfg-pb-vyatta:nd6-0,
+ vyatta-dataplane-cfg-pb-vyatta:icmp-ratelimit-0,
  vyatta-interfaces (>= 1.32),
  vyatta-system,
  ${misc:Depends},
@@ -288,3 +289,33 @@ Architecture: all
 Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-system-reboot-v1 module
  The YANG module for system reboot
+
+Package: vyatta-op-show-system-ip-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-ip-v1 module
+ The YANG module for show system IP operational commands
+
+Package: vyatta-op-show-system-ip-icmp-v1-yang
+Architecture: all
+Depends: vyatta-system, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-ip-icmp-v1 module
+ The YANG module for show system ICMP operational commands
+
+Package: vyatta-op-clear-system-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-clear-system-v1 module
+ The YANG module for clear system operational commands
+
+Package: vyatta-op-clear-system-ip-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-clear-system-ip-v1 module
+ The YANG module for clear system IP operational commands
+
+Package: vyatta-op-clear-system-ip-icmp-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-clear-system-ip-icmp-v1 module
+ The YANG module for clear system ICMP operational commands

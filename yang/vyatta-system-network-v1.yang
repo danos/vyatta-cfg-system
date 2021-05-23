@@ -57,6 +57,9 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2021-05-22 {
+		description "Add ICMP keyword.";
+	}
 	revision 2021-03-15 {
 		description "Clarify that removal of ARP entries by the garbage collector
 			     in the control plane depends not only on cache timeout, but also
@@ -246,6 +249,53 @@ module vyatta-system-network-v1 {
 					configd:help "Expiry time for stale entries in ARP cache (defaults: control plane [conditional]: 60s, dataplane: 1200s)";
 				}
 			}
+			container icmp {
+				configd:help "Parameters for generated ICMP rate limiting";
+				container rate-limit {
+					configd:help "Maximum messages per second";
+					container type {
+						configd:help "ICMP type to rate limit on generation";
+						description "ICMP type to rate limit";
+						leaf time-exceeded {
+							configd:help "ICMP TTL expired";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+						leaf destination-unreachable {
+							configd:help "ICMP Destination Unreachable";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+						leaf redirect {
+							configd:help "ICMP Redirect";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+					}
+					leaf default {
+						description "All ICMP types not explicitly configured for rate limit";
+						configd:help "All ICMP types not explicitly configured for rate limit";
+						type uint32 {
+							range 1..1000;
+							configd:help "Maximum messages generated per second";
+						}
+						configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+						configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+					}
+				}
+			}
 			leaf disable-forwarding {
 				type empty;
 				configd:help "Disable IPv4 forwarding";
@@ -310,6 +360,62 @@ module vyatta-system-network-v1 {
 					configd:help "Maximum number of pending resolutions (default: 100)";
 					configd:update "/opt/vyatta/sbin/vyatta-update-arp-params --action=SET --param=resolution-throttling --value=$VAR(@) --ipv6";
 					configd:delete "/opt/vyatta/sbin/vyatta-update-arp-params --action=DELETE --param=resolution-throttling --value=$VAR(@) --ipv6";
+				}
+			}
+			container icmp {
+				configd:help "Parameters for generated ICMPv6 rate limiting";
+				container rate-limit {
+					configd:help "Maximum messages per second";
+					container type {
+						configd:help "ICMPv6 type to rate limit on generation";
+						description "ICMPv6 type to rate limit";
+						leaf time-exceeded {
+							configd:help "ICMPv6 TTL expired";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+						leaf destination-unreachable {
+							configd:help "ICMPv6 Destination Unreachable";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+						leaf too-big {
+							configd:help "ICMPv6 Too Big";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+						leaf parameter-problem {
+							configd:help "ICMPv6 Parameter Problem";
+							type uint32 {
+								range 1..1000;
+								configd:help "Maximum messages generated per second";
+							}
+							configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+							configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+						}
+					}
+					leaf default {
+						description "All ICMP types not explicitly configured for rate limit";
+						configd:help "All ICMP types not explicitly configured for rate limit";
+						type uint32 {
+							range 1..1000;
+							configd:help "Maximum messages generated per second";
+						}
+						configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+						configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+					}
 				}
 			}
 			leaf disable-forwarding {
