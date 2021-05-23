@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: LGPL-2.1-only
+
+from argparse import ArgumentParser
+from vplaned import Controller
+from vyatta import configd
+from vyatta.proto import ICMPRateLimConfig_pb2
+import sys
+
+arg_parser = ArgumentParser()
+arg_parser.add_argument('--action', action='store', required=True)
+arg_parser.add_argument('--prot', action='store', required=True)
+arg_parser.add_argument('--param', action='store', required=True)
+arg_parser.add_argument('--type', action='store', required=True)
+arg_parser.add_argument('--maximum', action='store', required=True)
+
+args = arg_parser.parse_args()
+
+def get_action_id(action):
+        return {
+                'SET'           : ICMPRateLimConfig_pb2.ICMPRateLimConfig.SET,
+                'DELETE'        : ICMPRateLimConfig_pb2.ICMPRateLimConfig.DELETE,
+            }[action]
+
+def get_prot_id(prot):
+        return {
+                'ICMPV4'        : ICMPRateLimConfig_pb2.ICMPRateLimConfig.ICMPV4,
+                'ICMPV6'        : ICMPRateLimConfig_pb2.ICMPRateLimConfig.ICMPV6,
+            }[prot]
+
+def get_param_id(param):
+        return {
+                'maximum'       : ICMPRateLimConfig_pb2.ICMPRateLimConfig.MAXIMUM,
+            }[param]
+
+def get_type_id(icmptype):
+        return {
+                'redirect'      : ICMPRateLimConfig_pb2.ICMPRateLimConfig.REDIRECT,
+                'too-big'       : ICMPRateLimConfig_pb2.ICMPRateLimConfig.TOOBIG,
+                'destination-unreachable'
+                		: ICMPRateLimConfig_pb2.ICMPRateLimConfig.DESTUNREACH,
+                'time-exceeded' : ICMPRateLimConfig_pb2.ICMPRateLimConfig.TIMEEXCEEDED,
+                'parameter-problem'
+                		: ICMPRateLimConfig_pb2.ICMPRateLimConfig.PARAMPROB,
+                'default'       : ICMPRateLimConfig_pb2.ICMPRateLimConfig.DEFAULT,
+            }[icmptype]
+
+def config_icmp_ratelim(action, prot, param, icmptype, maximum):
+
+    try:
+            action_id = get_action_id(action)
+            prot_id   = get_prot_id(prot)
+            param_id  = get_param_id(param)
+            type_id   = get_type_id(icmptype)
+
+    except KeyError as e:
+        print("Invalid parameter {}\n".format(e.args[0]))
+        sys.exit(1)
+
+    cfg = ICMPRateLimConfig_pb2.ICMPRateLimConfig()
+    cfg.action = action_id
+    cfg.prot = prot_id
+    cfg.param = param_id
+    cfg.type = type_id
+    cfg.maximum = int(maximum)
+
+    key = "system ip {} rate-limit type {}".format(prot, icmptype)
+
+    controller.store(key, cfg, "ALL", action, cmd_name="vyatta:icmp-ratelimit")
+
+with Controller() as controller:
+        config_icmp_ratelim(args.action, args.prot, args.param, args.type, args.maximum)
