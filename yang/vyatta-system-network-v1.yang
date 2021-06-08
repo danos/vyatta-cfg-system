@@ -57,9 +57,14 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2021-06-11 {
+		description "Add ICMP rate limiting operational model.";
+	}
+
 	revision 2021-05-22 {
 		description "Add ICMP keyword.";
 	}
+
 	revision 2021-03-15 {
 		description "Clarify that removal of ARP entries by the garbage collector
 			     in the control plane depends not only on cache timeout, but also
@@ -212,6 +217,40 @@ module vyatta-system-network-v1 {
 		}
 	}
 
+	grouping icmp-rate-limit-counters {
+		leaf limit {
+			description "Maximum rate";
+			type uint32 {
+				range 0..1000;
+			}
+		}
+
+		leaf sent {
+			description "Total ICMP packets sent";
+			type uint32;
+		}
+
+		leaf dropped {
+			description "ICMP packets dropped in total";
+			type uint32;
+		}
+
+		leaf dropped-1-min {
+			description "ICMP packets dropped in previous 1 minute";
+			type uint32;
+		}
+
+		leaf dropped-3-min {
+			description "ICMP packets dropped in previous 3 minutes";
+			type uint32;
+		}
+
+		leaf dropped-5-min {
+			description "ICMP packets dropped in previous 5 minutes";
+			type uint32;
+		}
+	}
+
 	grouping system-network-hostname-ipinfo {
 		leaf host-name {
 			type string {
@@ -251,6 +290,7 @@ module vyatta-system-network-v1 {
 			}
 			container icmp {
 				configd:help "Parameters for generated ICMP rate limiting";
+				presence "ICMP rate limit feature configured";
 				container rate-limit {
 					configd:help "Maximum messages per second";
 					container type {
@@ -293,6 +333,31 @@ module vyatta-system-network-v1 {
 						}
 						configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
 						configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV4 --type=$VAR(.) --maximum=$VAR(@)";
+					}
+					container state {
+						config false;
+						configd:get-state "vyatta-icmp-rate-limit-state --af=v4";
+
+						list icmp-types {
+							description "Rate limited ICMP types";
+							key icmp-type;
+
+							leaf icmp-type {
+								type enumeration {
+									enum destination-unreachable {
+										description "Destination unreachable";
+									}
+									enum time-exceeded {
+										description "Time To Live expired";
+									}
+									enum redirect {
+										description "Redirect";
+									}
+								}
+							}
+
+							uses icmp-rate-limit-counters;
+						}
 					}
 				}
 			}
@@ -364,6 +429,7 @@ module vyatta-system-network-v1 {
 			}
 			container icmp {
 				configd:help "Parameters for generated ICMPv6 rate limiting";
+				presence "ICMP rate limit feature is configured";
 				container rate-limit {
 					configd:help "Maximum messages per second";
 					container type {
@@ -415,6 +481,34 @@ module vyatta-system-network-v1 {
 						}
 						configd:update "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=SET --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
 						configd:delete "/opt/vyatta/sbin/vyatta-icmp-rate-limit --action=DELETE --param=maximum --prot=ICMPV6 --type=$VAR(.) --maximum=$VAR(@)";
+					}
+					container state {
+						config false;
+						configd:get-state "vyatta-icmp-rate-limit-state --af=v6";
+
+						list icmp-types {
+							description "Rate limited ICMPv6 types";
+							key icmp-type;
+
+							leaf icmp-type {
+								type enumeration {
+									enum destination-unreachable {
+										description "Destination unreachable";
+									}
+									enum time-exceeded {
+										description "Time To Live expired";
+									}
+									enum too-big {
+										description "Too big to fragment";
+									}
+									enum parameter-problem {
+										description "Parameter problem";
+									}
+								}
+							}
+
+							uses icmp-rate-limit-counters;
+						}
 					}
 				}
 			}
