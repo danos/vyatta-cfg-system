@@ -80,6 +80,7 @@ sbin_SCRIPTS += scripts/vyatta-icmp-rate-limit
 sbin_SCRIPTS += scripts/vyatta-show-icmp-rate-limit.py
 sbin_SCRIPTS += scripts/vyatta-clear-icmp-rate-limit.py
 sbin_SCRIPTS += scripts/vyatta-icmp-rate-limit-state
+sbin_SCRIPTS += scripts/ForwardingClassConfig
 
 
 share_perl5_DATA = lib/Vyatta/File.pm

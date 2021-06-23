@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: LGPL-2.1-only
+
+import os
+import subprocess
+from argparse import ArgumentParser
+from vplaned import Controller
+from vyatta import configd
+from vyatta.proto import ForwardingClassConfig_pb2
+
+arg_parser = ArgumentParser()
+arg_parser.add_argument('--cmd', action='store', required=False)
+arg_parser.add_argument('--ip', action='store', required=False)
+arg_parser.add_argument('--proto', action='store', required=False)
+arg_parser.add_argument('--value', action='store', required=False)
+arg_parser.add_argument('--action', action='store', required=False)
+
+args = arg_parser.parse_args()
+
+# To update ndisc_tclass value for all interface to support NA, NS, RS, Redirect packets
+def ndisc_tclass_update(tclass):
+	path = "/proc/sys/net/ipv6/conf"
+	dirs = os.listdir(path)
+	for file_1 in dirs:
+		abs_path = path + '/' + file_1 + '/ndisc_tclass'
+		with open(abs_path, 'w') as fp :
+			fp.write(str(tclass))
+
+# To update ip-table rules for RA packets
+def tos_update_ra_msg(tos):
+	cmd = "ip6tables -t mangle -n -L POSTROUTING --line-numbers | grep -i TOS | grep -i ipv6-icmptype"
+	try:
+		out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		rule = out.stdout.decode()
+		if rule:
+			rulenum = rule.split(' ', 1)[0]
+			# update the existing rule with rulenum
+			cmd = "ip6tables -t mangle -R POSTROUTING {} -p ipv6-icmp --icmpv6-type router-advertisement -j TOS --set-tos {}".format(rulenum, tos)
+		else:
+			# Append the rule
+			cmd = "ip6tables -t mangle -A POSTROUTING -p ipv6-icmp --icmpv6-type router-advertisement -j TOS --set-tos {}".format(tos)
+
+		out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+	except Exception as e:
+		err("Failed running command {}: {}".format(cmd, e))
+		sys.exit(1)
+
+def config_profile(action, ip, proto, value):
+	cfg = ForwardingClassConfig_pb2.ForwardingClassConfig()
+
+	#prepare the protocol
+	if proto == 'icmp':
+		cfg.pt = cfg.ICMP
+	elif proto == 'esp':
+		cfg.pt = cfg.ESP
+	else:
+		cfg.pt = cfg.ND
+
+	#prepare the address family
+	if ip == 'ipv4':
+		cfg.af = cfg.IPV4
+		key_af = "ip4"
+	else:
+		cfg.af = cfg.IPV6
+		key_af = "ip6"
+
+	#prepare the tos/traffic_class
+	if value == 'inherit':
+		cfg.tos_traffic_class = 256
+	else:
+		cfg.tos_traffic_class = int(value, 16)
+
+	#prepare the key
+	key = "{} forwardingclass {}".format(key_af,proto)
+
+	#Send the key-value pair to vplaned
+	controller.store(key, cfg, "ALL", action, cmd_name="vyatta:forwardingclass")
+
+	#update tclass for nd6
+	if proto == 'nd':
+		ndisc_tclass_update(cfg.tos_traffic_class)
+		tos_update_ra_msg(cfg.tos_traffic_class)
+
+with Controller() as controller:
+	if args.cmd == "tos_tclass_config":
+		config_profile(args.action, args.ip, args.proto, args.value)
+	else:
+		print("invalid command: {}".format(args.cmd))
