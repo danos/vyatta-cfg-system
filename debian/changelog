@@ -1,3 +1,24 @@
+vyatta-cfg-system (2.35) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * configure.ac: check for appropriate pylint version
+
+  [ Mike Manning ]
+  * Kernel: Generate ND packets with correct DSCP field
+  * ARP stale time does not behave as one might expect for kernel entries
+
+  [ Sameer Agrawal ]
+  * System files and existing files should not be overwritten when using
+    the "show license" command. VRVDR-54508
+  * Add reboot hardware command support. VRVDR-43333
+
+  [ Thomas Kiely ]
+  * Yang for ICMP generation rate limiting feature
+  * Scripts for ICMP generation rate limiting feature
+  * yang operational model for ICMP rate limit feature
+
+ -- Paul Carson <paul.carson@intl.att.com>  Thu, 01 Jul 2021 14:13:17 +0100
+
 vyatta-cfg-system (2.34) unstable; urgency=medium
 
   [ Duncan Eastoe ]
