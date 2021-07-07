@@ -108,7 +108,7 @@ sudoersddir = /etc/sudoers.d
 sudoersd_DATA = etc/sudoers.d/0vyatta
 
 sysctlddir = /etc/sysctl.d
-sysctld_DATA = etc/sysctl.d/30-vyatta-router.conf
+sysctld_DATA = etc/sysctl.d/99900-vyatta-router.conf
 
 update_motddir = /etc/update-motd.d
 update_motd_SCRIPTS = etc/update-motd.d/00-version
