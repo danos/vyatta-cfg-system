@@ -2,9 +2,6 @@ module vyatta-system-network-v1 {
 	namespace "urn:vyatta.com:mgmt:vyatta-system-network:1";
 	prefix vyatta-system-network-v1;
 
-	import vyatta-dscp-v1 {
-		prefix dscp;
-	}
 	import vyatta-types-v1 {
 		prefix types;
 	}
@@ -60,7 +57,7 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
-	revision 2021-06-28 {
+	revision 2021-07-13 {
 		description "Add configuration for TOS(ICMPv4 and ESP).
 			     Add configuration for TCLASS(ICMPv6, ND, ESP).";
 	}
