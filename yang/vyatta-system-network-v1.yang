@@ -57,7 +57,7 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
-	revision 2021-07-13 {
+	revision 2021-07-14 {
 		description "Add configuration for TOS(ICMPv4 and ESP).
 			     Add configuration for TCLASS(ICMPv6, ND, ESP).";
 	}
@@ -582,7 +582,7 @@ module vyatta-system-network-v1 {
 					description "Dataplane creates the ICMPv6 error messages with tclass value
 						     and sends the control packet out.";
 					configd:help "Traffic class (Tclass)";
-					default "0x00";
+					default "0xC0";
 					configd:update "ForwardingClassConfig --action=SET --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv6";
 					configd:delete "ForwardingClassConfig --action=DELETE --cmd=tos_tclass_config --proto=icmp --value=$VAR(@) --ip=ipv6";
 				}
