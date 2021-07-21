@@ -16,9 +16,10 @@ require Exporter;
 our @ISA    = qw (Exporter);
 our @EXPORT = qw(log_reboot_reason get_reboot_reason save_rr_log_file);
 
-my $RR_LOG_FILE   = "/device-cache/reboot_reason.log";
-my $SAVE_LOG_FILE = "/device-cache/last_reboot_reason.log";
-my $II_LOG_FILE   = "/device-cache/install_image.log";
+my $LOG_DIR       = "/device-cache";
+my $RR_LOG_FILE   = "$LOG_DIR/reboot_reason.log";
+my $II_LOG_FILE   = "$LOG_DIR/install_image.log";
+my $SAVE_LOG_FILE = "/var/log/vyatta/last_reboot_reason.log";
 
 my @LAST_CMD = ( '/usr/bin/last', '-xFR' );
 my @LOG_CMD  = ( 'journalctl',    '-b-1' );
@@ -48,6 +49,7 @@ sub get_running_image {
 }
 
 sub log_running_image {
+    return unless ( -d $LOG_DIR );
     my $running_image = get_running_image();
     logit( $II_LOG_FILE, "$running_image" );
     return;
@@ -57,6 +59,7 @@ sub log_reboot_reason {
     my ($msg) = @_;
 
     log_running_image();
+    return unless ( -d $LOG_DIR );
     logit( $RR_LOG_FILE, $msg );
     return;
 }
