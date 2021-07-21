@@ -2,10 +2,10 @@
 # Functions to assist with maintenance of platform configuration.
 # Derived class of FeatureConfig
 #
-# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# Copyright (c) 2018-2021 AT&T Intellectual Property.
 #    All Rights Reserved.
 #
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: LGPL-2.1-only
 
 package Vyatta::PlatformConfig;
 use strict;

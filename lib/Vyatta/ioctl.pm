@@ -3,7 +3,7 @@
 # Description: vyatta ioctl functions
 
 # **** License ****
-# Copyright (c) 2018-2019 AT&T Intellectual Property
+# Copyright (c) 2018-2021 AT&T Intellectual Property
 # All rights reserved.
 #
 # Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
@@ -13,7 +13,7 @@
 # Portions created by Vyatta are Copyright (C) 2008 Vyatta, Inc.
 # All Rights Reserved.
 #
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: LGPL-2.1-only
 # **** End License ****
 
 package Vyatta::ioctl;

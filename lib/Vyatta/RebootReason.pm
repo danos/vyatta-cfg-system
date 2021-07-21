@@ -1,7 +1,7 @@
 # Copyright (c) 2021 AT&T Intellectual Property.
 #    All Rights Reserved.
 #
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: LGPL-2.1-only
 
 package Vyatta::RebootReason;
 use strict;
