@@ -362,7 +362,7 @@ sub do_reboot {
         run3 (\@cmd, undef, \$output, \$err);
         if ($? != 0) {
             syslog("warning", "Reboot hardware operation failed: $err");
-            die("Operation is not supported by the firmware!\n");
+            die("This operation is not supported by the firmware.\n");
         }
         $output = "All hardware systems will be rebooted\n";
         encode_json_output($output);
