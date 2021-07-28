@@ -18,7 +18,8 @@ def invoke_rpc(type):
                                  "reboot",
                                  {"type": type})
     except Exception as e:
-        print("Unable to reboot: " + str(e) + "\n", file=sys.stderr)
+        error = str(e).replace("RPC failure: ", '')
+        print("Unable to reboot: " + error + "\n", file=sys.stderr)
         sys.exit(1)
 
     try:
