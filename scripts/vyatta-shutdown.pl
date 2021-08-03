@@ -351,7 +351,7 @@ sub do_reboot {
     my ($login, $reboot_type) = @_;
     my ($output, $err);
 
-    if ($reboot_type eq "now") {
+    if ($reboot_type eq "os") {
         $output = "The system is going down for reboot\n";
         encode_json_output($output);
         syslog("warning", "Reboot now requested by $login");

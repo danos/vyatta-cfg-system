@@ -48,7 +48,7 @@ module vyatta-system-reboot-v1 {
 
 		 Defines the RPC mechanism for system reboot";
 
-	revision 2021-05-10 {
+	revision 2021-08-01 {
 		description "Initial version";
 	}
 
@@ -59,8 +59,8 @@ module vyatta-system-reboot-v1 {
 			enum hardware {
 				description "Reboot all hardware components";
 			}
-			enum now {
-				description "Reboot the system now";
+			enum os {
+				description "Reboot the operating system.";
 			}
 		}
 	}
