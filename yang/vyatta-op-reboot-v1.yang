@@ -48,8 +48,12 @@ module vyatta-op-reboot-v1 {
 
 		 Defines the reboot operational CLI";
 
-	revision 2021-05-10 {
+	revision 2021-08-01 {
 		description "Initial version";
+	}
+
+	feature reboot-hardware {
+		description "Reboot hardware support";
 	}
 
 	opd:command reboot {
@@ -57,9 +61,16 @@ module vyatta-op-reboot-v1 {
 		opd:on-enter "vyatta-op-reboot";
 
 		opd:command hardware {
+			if-feature reboot-hardware;
 			opd:help "Reboot all hardware components";
 			opd:on-enter "vyatta-op-reboot hardware";
+
+			opd:command now {
+				opd:help "Reboot hardware without confirmation";
+				opd:on-enter "vyatta-op-reboot hardware now";
+			}
 		}
+
 		opd:command now {
 			opd:help "Reboot the system without confirmation";
 			opd:on-enter "vyatta-op-reboot now";

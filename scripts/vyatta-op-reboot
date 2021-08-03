@@ -32,9 +32,14 @@ def invoke_rpc(type):
 if __name__ == "__main__":
 
     if len(sys.argv) > 1:
-        reboot_type = sys.argv[1]
+        if sys.argv[1] == "now":
+            reboot_type = "os"
+        else:
+            reboot_type = sys.argv[1]
 
-    if len(sys.argv) == 1 or reboot_type == "hardware":
+    # Ask confirmation for 'reboot' or 'reboot hardware' command.
+    if (len(sys.argv) == 1) or \
+        (len(sys.argv) == 2 and reboot_type == "hardware"):
         reboot_flag = input("Proceed with reboot? (Yes/No) [No] ")
         reboot_flag = reboot_flag.lower()
 
@@ -43,7 +48,7 @@ if __name__ == "__main__":
           reboot_flag == "yes" or reboot_flag == "y":
             # Got confirmation for reboot, proceed as reboot now
             if len(sys.argv) == 1:
-                reboot_type = "now"
+                reboot_type = "os"
             invoke_rpc(reboot_type)
         else:
             print("Reboot canceled\n")
