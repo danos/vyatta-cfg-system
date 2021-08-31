@@ -1,3 +1,13 @@
+vyatta-cfg-system (2.35.1) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Fix error message when reboot hardware is run on non SIAD systems.
+    VRVDR-55827
+  * Add 'now' option for reboot hardware command and support reboot
+    hardware only on s9500 platform. VRVDR-55786
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 31 Aug 2021 13:04:10 +0100
+
 vyatta-cfg-system (2.35) unstable; urgency=medium
 
   [ Nicholas Brown ]
