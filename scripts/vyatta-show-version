@@ -28,6 +28,9 @@ use File::Slurp qw(read_file);
 use POSIX qw(uname);
 use IPC::Run3;
 
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::RebootReason qw(get_last_reboot_reason);
+
 #
 # Global hash of debians in the base install and now.
 #
@@ -362,6 +365,9 @@ sub main {
     if ( defined $uptime && $uptime ne "" ) {
         print "Uptime:      $uptime";
     }
+
+    my $reboot_reason = get_last_reboot_reason();
+    print "Last Reboot:  $reboot_reason\n";
 
     if ( !( -e $debsfile ) ) {
         exit 0;

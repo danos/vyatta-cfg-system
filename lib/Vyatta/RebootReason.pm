@@ -8,13 +8,15 @@ use strict;
 use warnings;
 use File::Slurp qw( write_file read_file );
 use IPC::Run3;
+use File::Copy;
 
 use lib "/opt/vyatta/share/perl5";
 use Vyatta::Configd;
 
 require Exporter;
-our @ISA    = qw (Exporter);
-our @EXPORT = qw(log_reboot_reason get_reboot_reason save_rr_log_file);
+our @ISA = qw (Exporter);
+our @EXPORT =
+  qw(log_reboot_reason get_reboot_reason save_rr_log_file get_last_reboot_reason);
 
 my $LOG_DIR       = "/device-cache";
 my $RR_LOG_FILE   = "$LOG_DIR/reboot_reason.log";
@@ -65,7 +67,7 @@ sub log_reboot_reason {
 }
 
 sub save_rr_log_file {
-    rename( $RR_LOG_FILE, $SAVE_LOG_FILE )
+    move( $RR_LOG_FILE, $SAVE_LOG_FILE )
       if ( -e $RR_LOG_FILE );
     return;
 }
@@ -172,6 +174,12 @@ sub get_reboot_reason {
     ( $rr_type, $rr_reason ) = check_reason( $rr_type, $rr_reason );
     logit( $RR_LOG_FILE, $rr_reason );
     return ( $rr_type, $rr_reason );
+}
+
+sub get_last_reboot_reason {
+    my $rr = read_file($SAVE_LOG_FILE) if ( -e $SAVE_LOG_FILE );
+    $rr =~ s/:/ -/g if defined($rr);
+    return ( defined($rr) ? $rr : "" );
 }
 
 1;
