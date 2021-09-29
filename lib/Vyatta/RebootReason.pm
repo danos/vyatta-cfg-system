@@ -177,7 +177,8 @@ sub get_reboot_reason {
 }
 
 sub get_last_reboot_reason {
-    my $rr = read_file($SAVE_LOG_FILE) if ( -e $SAVE_LOG_FILE );
+    my $rr;
+    $rr = read_file($SAVE_LOG_FILE) if ( -e $SAVE_LOG_FILE );
     $rr =~ s/:/ -/g if defined($rr);
     return ( defined($rr) ? $rr : "" );
 }
