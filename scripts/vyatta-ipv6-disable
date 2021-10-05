@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019 AT&T Intellectual Property
+# Copyright (c) 2019-2021 AT&T Intellectual Property
 # All rights reserved.
 # Copyright (c) 2015-2016, 2019 by Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -17,50 +17,6 @@ ipv6_conf=/proc/sys/net/ipv6/conf
 ipv6_run=/var/run/vyatta
 procfile=$ipv6_conf/$intf/$param
 runfile=$ipv6_run/ipv6_disable.$intf
-
-modify_global ()
-{
-    echo $value > $ipv6_conf/all/$param
-    echo $value > $ipv6_conf/default/$param
-}
-
-modify_startup ()
-{
-    FILE=/etc/sysctl.d/30-vyatta-router.conf
-    sed -i -e "/^net.ipv6.conf.*.disable_ipv6=/s/$((1-value))/$value/g" $FILE
-}
-
-create_global ()
-{
-    modify_global
-    modify_startup
-}
-
-delete_global ()
-{
-    # Enable IPv6 by default and for interfaces that are not disabled,
-    # then restore IPv6 addresses and also modify the kernel parameter
-    # file read at startup, as this was changed for the create action.
-    cd $ipv6_conf
-    echo 0 > default/$param
-    enable_all=1
-    for i in * ; do
-        if [ "$i" == "default" ] || [ "$i" == "all" ] || [ ! -d "$i" ]
-        then
-            continue
-        fi
-        if [ -e $ipv6_run/ipv6_disable."$i" ]; then
-            enable_all=0
-        else
-            echo 0 > $i/$param
-        fi
-    done
-    if [ "$enable_all" == "1" ]; then
-        echo 0 > all/$param
-    fi
-    restore-ipv6-address.pl --force-restore
-    modify_startup
-}
 
 create_intf () {
     if [ -e "$procfile" ]; then
@@ -92,23 +48,20 @@ delete_intf () {
     rm -f "$runfile"
 }
 
+if [ -z "$intf" ]; then
+       echo "Usage: $progname {create|delete} <ifname>"
+       exit 1
+fi
+
 case "$action" in
     create)
-        if [ -n "$intf" ]; then
-            create_intf
-        else
-            create_global
-        fi
+        create_intf
         ;;
     delete)
-        if [ -n "$intf" ]; then
-            delete_intf
-        else
-            delete_global
-        fi
+        delete_intf
         ;;
     *)
-        echo "Usage: $progname {create|delete} [<ifname>]"
+        echo "Usage: $progname {create|delete} <ifname>"
         exit 1
         ;;
 esac

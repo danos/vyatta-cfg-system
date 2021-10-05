@@ -60,6 +60,7 @@ sbin_SCRIPTS += scripts/system/vyatta_update_console.pl
 sbin_SCRIPTS += scripts/vyatta-system-nameservers
 sbin_SCRIPTS += scripts/restore-ipv6-address.pl
 sbin_SCRIPTS += scripts/vyatta-ipv6-disable
+sbin_SCRIPTS += scripts/vyatta-ipv6-conf
 sbin_SCRIPTS += scripts/check-ipv4-ipv6.pl
 sbin_SCRIPTS += scripts/vyatta-update-arp-params
 sbin_SCRIPTS += scripts/vyatta-pxe-boot

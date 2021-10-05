@@ -57,6 +57,10 @@ module vyatta-system-network-v1 {
 
 		 Global network parameter configuration";
 
+	revision 2021-10-18 {
+		description "Modify ipv6 sysctl settings without altering default
+			     settings of startup config file.";
+	}
 	revision 2021-07-14 {
 		description "Add configuration for TOS(ICMPv4 and ESP).
 			     Add configuration for TCLASS(ICMPv6, ND, ESP).";
@@ -267,6 +271,7 @@ module vyatta-system-network-v1 {
 	}
 
 	grouping system-network-hostname-ipinfo {
+		configd:end "vyatta-ipv6-conf";
 		leaf host-name {
 			type string {
 				pattern '[0-9A-Za-z][-\.0-9A-Za-z]*[0-9A-Za-z]';
@@ -444,8 +449,6 @@ module vyatta-system-network-v1 {
 				type empty;
 				configd:priority "400";
 				configd:help "Disable assignment of IPv6 addresses on all interfaces";
-				configd:create "vyatta-ipv6-disable create";
-				configd:delete "vyatta-ipv6-disable delete";
 			}
 			leaf strict-dad {
 				type empty;

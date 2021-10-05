@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020-2021, AT&T Intellectual Property.
+# All Rights Reserved.
+
+from vyatta import configd
+import subprocess
+import os
+
+def sysctl(name, value):
+    if value == True:
+        value = 1
+    elif value == False:
+        value = 0
+    else:
+        value = int(value)
+
+    if 'COMMIT_DEBUG' in os.environ:
+        print(['/usr/sbin/sysctl', '-q', '-w', '{}={}'.format(name, value)])
+    subprocess.run(['/usr/sbin/sysctl', '-q', '-w', '{}={}'.format(name, value)])
+
+
+def main():
+    disable_ipv6 = False
+    try:
+        IPV6_DISABLE_CONFIG_STRING = 'system ipv6 disable'
+        client = configd.Client()
+
+        if client.node_exists(client.CANDIDATE, IPV6_DISABLE_CONFIG_STRING):
+            disable_ipv6 = True
+
+    except Exception as e:
+        print("Unable to access '{}' configuration: '{}'".format(IPV6_DISABLE_CONFIG_STRING, e), file=sys.stderr)
+        sys.exit(1)
+
+    sysctl('net.ipv6.conf.all.disable_ipv6', disable_ipv6)
+    sysctl('net.ipv6.conf.default.disable_ipv6', disable_ipv6)
+
+    if not disable_ipv6:
+        subprocess.run(['/opt/vyatta/sbin/restore-ipv6-address.pl', '--force-restore'])
+
+if __name__ == "__main__":
+    main()
