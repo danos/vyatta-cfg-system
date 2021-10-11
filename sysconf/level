@@ -1,3 +1,3 @@
-superuser:vyattacfg,vyattasu,adm,wireshark,systemd-journal
-admin:vyattacfg,vyattaadm,adm,wireshark,systemd-journal
-operator:vyattaop,wireshark,systemd-journal
+superuser:vyattacfg,routeadm,vyattasu,adm,wireshark,systemd-journal
+admin:vyattacfg,routeadm,vyattaadm,adm,wireshark,systemd-journal
+operator:vyattaop,routeadm,wireshark,systemd-journal
