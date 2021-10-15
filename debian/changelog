@@ -1,3 +1,10 @@
+vyatta-cfg-system (2.35.2) unstable; urgency=medium
+
+  [ Gavin Shearer ]
+  * Fix issue of negative temperature causing show command traceback.
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 15 Oct 2021 15:47:26 +0100
+
 vyatta-cfg-system (2.35.1) unstable; urgency=medium
 
   [ Sameer Agrawal ]
