@@ -45,7 +45,7 @@ sub logit {
     my ( $file, $msg ) = @_;
 
     unlink($file);
-    write_file( $file, $msg );
+    write_file( $file, { err_mode => 'quiet' }, $msg );
     return;
 }
 
