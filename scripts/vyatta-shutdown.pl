@@ -363,7 +363,7 @@ sub do_reboot {
         exec("/sbin/reboot");
     } elsif ($reboot_type eq "hardware") {
         syslog("warning", "All hardware systems reboot requested by $login");
-        log_reboot_reason("CLI reboot: All hardware systems reboot requested by user $login");
+        log_reboot_reason("$HW_REBOOT: All hardware systems reboot requested by user $login");
         my @cmd = ("/usr/bin/ipmitool", "raw", "0x3c", "0x24", "0x01", "0x00");
         run3 (\@cmd, undef, \$output, \$err);
         if ($? != 0) {

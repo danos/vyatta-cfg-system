@@ -16,7 +16,7 @@ use Vyatta::Configd;
 require Exporter;
 our @ISA = qw (Exporter);
 our @EXPORT =
-  qw(log_reboot_reason get_reboot_reason save_rr_log_file get_last_reboot_reason);
+  qw(log_reboot_reason get_reboot_reason save_rr_log_file get_last_reboot_reason $HW_REBOOT);
 
 my $LOG_DIR       = "/device-cache";
 my $RR_LOG_FILE   = "$LOG_DIR/reboot_reason.log";
@@ -40,6 +40,8 @@ my $UNGRACEFUL_SHUTDOWN =
   "Other: Reboot after ungraceful shutdown, force reset/poweroff, or crash";
 my $CRASH_UNAVAIL = "System crash: vmcore and dmesg log not available";
 my $POWERKEY      = "Power off: Power key pressed, system was powered down";
+
+our $HW_REBOOT    = "CLI hardware reboot";
 
 sub logit {
     my ( $file, $msg ) = @_;
@@ -125,7 +127,7 @@ sub check_hw_reboot {
         if ( $line =~ /vyatta-shutdown.pl/ ) {
             my $reason = ( split( /:/, $line ) )[-1];
             if ( $reason =~ /^ All hardware systems reboot/ ) {
-                my $rr_reason = "CLI hardware reboot:$reason";
+                my $rr_reason = "$HW_REBOOT:$reason";
                 return ( $COLD_REBOOT, $rr_reason );
             }
         }
