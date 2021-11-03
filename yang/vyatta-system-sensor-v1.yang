@@ -20,7 +20,7 @@ module vyatta-system-sensor-v1 {
          Web: www.att.com";
 
     description
-        "Copyright (c) 2018-2020, AT&T Intellectual Property.
+        "Copyright (c) 2018-2021, AT&T Intellectual Property.
          All rights reserved.
 
         Copyright (c) 2018 IETF Trust and the persons identified as the
@@ -34,6 +34,10 @@ module vyatta-system-sensor-v1 {
 
         This version of this YANG module is derived from IETF Draft
         draft-ietf-netmod-entity-08";
+
+    revision 2021-11-05 {
+        description "Update decimal places for sensor readings.";
+    }
 
     revision 2020-06-17 {
         description "Add new sensor-value-type amperes.";
@@ -187,7 +191,7 @@ module vyatta-system-sensor-v1 {
     typedef sensor-threshold {
         description "Sensor threshold type";
         type decimal64 {
-            fraction-digits 2;
+            fraction-digits 5;
             range -100000..100000;
         }
     }
