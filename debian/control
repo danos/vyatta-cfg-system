@@ -91,7 +91,7 @@ Depends:
  grub-common,
  host,
  ipmitool,
- iproute,
+ iproute2,
  iputils-arping,
  isc-dhcp-client,
  kbd (>= 1.12-14),
